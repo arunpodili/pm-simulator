@@ -3,91 +3,64 @@
 @tailwind utilities;
 
 /* ============================================
-   RICH MINIMALIST DESIGN SYSTEM v2.0
+   NOTION-LIKE DESIGN SYSTEM v3.0
    ============================================ */
 
 :root {
-  /* Color Palette - Strict Black & White */
+  /* Color Palette - Clean Black & White */
   --background: 0 0% 100%;
   --foreground: 0 0% 5%;
-  --surface: 0 0% 98%;
+  --surface: 0 0% 100%;
+  --surface-hover: 0 0% 98%;
   --surface-elevated: 0 0% 100%;
 
-  /* Grays for hierarchy */
-  --gray-50: 0 0% 97%;
-  --gray-100: 0 0% 93%;
-  --gray-200: 0 0% 85%;
-  --gray-300: 0 0% 70%;
-  --gray-400: 0 0% 55%;
-  --gray-500: 0 0% 40%;
-  --gray-600: 0 0% 28%;
-  --gray-700: 0 0% 18%;
-  --gray-800: 0 0% 10%;
+  /* Grays */
+  --gray-50: 0 0% 98%;
+  --gray-100: 0 0% 95%;
+  --gray-200: 0 0% 90%;
+  --gray-300: 0 0% 80%;
+  --gray-400: 0 0% 60%;
+  --gray-500: 0 0% 45%;
+  --gray-600: 0 0% 35%;
+  --gray-700: 0 0% 22%;
+  --gray-800: 0 0% 12%;
   --gray-900: 0 0% 5%;
 
-  /* Accents - Only black/white with subtle states */
+  /* Accents */
   --primary: 0 0% 5%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 0 0% 97%;
-  --secondary-foreground: 0 0% 15%;
-  --accent: 0 0% 93%;
-  --accent-foreground: 0 0% 10%;
+  --primary-hover: 0 0% 15%;
+  --accent-blue: 211 100% 50%;
+  --accent-blue-bg: 211 100% 97%;
 
   /* States */
-  --border: 0 0% 90%;
-  --border-dark: 0 0% 70%;
-  --input: 0 0% 95%;
-  --ring: 0 0% 15%;
-
-  /* Feedback (subtle, not colorful) */
-  --success: 142 76% 36%;
-  --success-bg: 142 76% 96%;
-  --error: 0 84% 60%;
-  --error-bg: 0 84% 98%;
-  --warning: 38 92% 50%;
-  --warning-bg: 38 92% 98%;
+  --border: 0 0% 92%;
+  --border-dark: 0 0% 80%;
+  --ring: 0 0% 20%;
 
   /* Typography */
   --font-heading: 'Playfair Display', Georgia, serif;
   --font-body: 'IBM Plex Mono', 'Fira Code', monospace;
   --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-
-  /* Spacing (4px base unit) */
-  --space-xs: 4px;
-  --space-sm: 8px;
-  --space-md: 16px;
-  --space-lg: 24px;
-  --space-xl: 32px;
-  --space-2xl: 48px;
-  --space-3xl: 64px;
-
-  /* Radius */
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-xl: 12px;
-
-  /* Shadows - Subtle elevation only */
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.1);
-
-  /* Transitions */
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ============================================
-   BASE STYLES
+   CROSS-BROWSER RESET
    ============================================ */
 
-* {
-  border-color: var(--border);
+*, *::before, *::after {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
 }
 
 body {
+  margin: 0;
+  padding: 0;
   background-color: var(--surface);
   color: var(--foreground);
   font-family: var(--font-body);
@@ -95,6 +68,196 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Selection - Cross-browser */
+::selection {
+  background-color: var(--gray-200);
+  color: var(--foreground);
+}
+
+::-moz-selection {
+  background-color: var(--gray-200);
+  color: var(--foreground);
+}
+
+/* ============================================
+   NOTION-LIKE BLOCK EDITOR STYLES
+   ============================================ */
+
+.notion-block {
+  position: relative;
+  padding: 8px 0;
+  transition: background-color 0.15s ease;
+}
+
+.notion-block:hover {
+  background-color: var(--gray-50);
+}
+
+.notion-block:hover .block-controls {
+  opacity: 1;
+}
+
+.block-controls {
+  position: absolute;
+  left: -32px;
+  top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.block-control-btn {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--gray-400);
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.block-control-btn:hover {
+  background-color: var(--gray-200);
+  color: var(--gray-700);
+}
+
+/* Slash Command Menu */
+.slash-menu {
+  position: absolute;
+  z-index: 1000;
+  min-width: 280px;
+  max-height: 400px;
+  overflow-y: auto;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+  padding: 6px;
+}
+
+.slash-menu-category {
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.slash-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+}
+
+.slash-menu-item:hover,
+.slash-menu-item.selected {
+  background-color: var(--gray-100);
+}
+
+.slash-menu-item-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gray-50);
+  border-radius: 4px;
+  color: var(--gray-600);
+}
+
+.slash-menu-item-title {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gray-800);
+}
+
+.slash-menu-item-desc {
+  font-size: 11px;
+  color: var(--gray-400);
+}
+
+/* ============================================
+   NOTION-LIKE TABLE STYLES
+   ============================================ */
+
+.notion-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  font-family: var(--font-body);
+}
+
+.notion-table th {
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 500;
+  font-size: 12px;
+  color: var(--gray-600);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: var(--gray-50);
+  border: 1px solid var(--border);
+}
+
+.notion-table td {
+  padding: 0;
+  border: 1px solid var(--border);
+  min-height: 36px;
+}
+
+.notion-table-cell {
+  width: 100%;
+  min-height: 34px;
+  padding: 8px 12px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--gray-800);
+  resize: none;
+  display: block;
+}
+
+.notion-table-cell:focus {
+  background: var(--gray-50);
+}
+
+.notion-table-cell::placeholder {
+  color: var(--gray-300);
+}
+
+.notion-table-add-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--gray-400);
+  cursor: pointer;
+  transition: all 0.1s ease;
+  border: 1px solid transparent;
+}
+
+.notion-table-add-row:hover {
+  background: var(--gray-50);
+  color: var(--gray-600);
+  border-color: var(--border);
 }
 
 /* ============================================
@@ -106,27 +269,34 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
   line-height: 1.3;
   color: var(--foreground);
+  margin: 0;
 }
 
-h1 {
-  font-size: 32px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-
-h2 {
-  font-size: 24px;
-  font-weight: 600;
-}
-
-h3 {
-  font-size: 18px;
-  font-family: var(--font-ui);
-  font-weight: 600;
-}
+h1 { font-size: 32px; letter-spacing: -0.02em; }
+h2 { font-size: 24px; }
+h3 { font-size: 18px; font-family: var(--font-ui); }
 
 p {
-  margin-bottom: 1em;
+  margin: 0;
+}
+
+/* ============================================
+   EDITABLE CONTENT STYLES
+   ============================================ */
+
+[contenteditable] {
+  outline: none;
+  cursor: text;
+}
+
+[contenteditable]:empty:before {
+  content: attr(data-placeholder);
+  color: var(--gray-300);
+  pointer-events: none;
+}
+
+[contenteditable]:focus {
+  outline: none;
 }
 
 /* ============================================
@@ -134,37 +304,40 @@ p {
    ============================================ */
 
 .container {
-  max-width: 1400px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 0 var(--space-lg);
+  padding: 0 24px;
 }
 
 .workspace {
-  max-width: 1200px;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 0 var(--space-xl);
+}
+
+.full-width {
+  width: 100%;
 }
 
 /* ============================================
-   COMPONENT STYLES
+   BUTTON STYLES
    ============================================ */
 
-/* Buttons */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-sm);
-  padding: 10px 20px;
+  gap: 8px;
+  padding: 8px 16px;
   font-family: var(--font-ui);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   line-height: 1;
-  border-radius: var(--radius-md);
+  border-radius: 6px;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all var(--transition-fast);
-  min-height: 44px; /* Fitts's Law */
+  transition: all 0.15s ease;
+  min-height: 36px;
+  text-decoration: none;
 }
 
 .btn-primary {
@@ -177,35 +350,59 @@ p {
 }
 
 .btn-secondary {
-  background-color: var(--secondary);
-  color: var(--secondary-foreground);
+  background-color: var(--surface);
+  color: var(--gray-700);
   border-color: var(--border);
 }
 
 .btn-secondary:hover {
-  background-color: var(--accent);
+  background-color: var(--gray-50);
+  border-color: var(--gray-300);
 }
 
 .btn-ghost {
-  background-color: transparent;
+  background: transparent;
   color: var(--gray-600);
 }
 
 .btn-ghost:hover {
-  background-color: var(--accent);
-  color: var(--foreground);
+  background: var(--gray-100);
+  color: var(--gray-800);
 }
 
-/* Inputs */
+.btn-icon {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--gray-500);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.1s ease;
+}
+
+.btn-icon:hover {
+  background: var(--gray-100);
+  color: var(--gray-700);
+}
+
+/* ============================================
+   INPUT STYLES
+   ============================================ */
+
 .input {
   width: 100%;
-  padding: 12px 16px;
+  padding: 8px 12px;
   font-family: var(--font-body);
-  font-size: 15px;
-  background-color: var(--surface);
+  font-size: 14px;
+  background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+  border-radius: 6px;
+  transition: all 0.15s ease;
   outline: none;
 }
 
@@ -215,347 +412,198 @@ p {
 }
 
 .input::placeholder {
-  color: var(--gray-400);
+  color: var(--gray-300);
 }
 
 .textarea {
-  min-height: 120px;
+  min-height: 100px;
   resize: vertical;
-}
-
-/* Cards */
-.card {
-  background-color: var(--surface-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-xs);
-}
-
-.card-hover:hover {
-  box-shadow: var(--shadow-sm);
-  border-color: var(--border-dark);
-}
-
-/* ============================================
-   NAVIGATION STYLES
-   ============================================ */
-
-.nav-dropdown {
-  position: relative;
-}
-
-.nav-dropdown-content {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  min-width: 280px;
-  background-color: var(--surface-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  padding: var(--space-sm);
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-8px);
-  transition: all var(--transition-base);
-  z-index: 100;
-}
-
-.nav-dropdown:hover .nav-dropdown-content {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-}
-
-/* ============================================
-   SEARCH STYLES
-   ============================================ */
-
-.search-container {
-  position: relative;
-  width: 400px;
-}
-
-.search-input {
-  width: 100%;
-  padding: 10px 16px 10px 40px;
-  font-family: var(--font-ui);
-  font-size: 14px;
-  background-color: var(--secondary);
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
-  outline: none;
-}
-
-.search-input:focus {
-  background-color: var(--surface-elevated);
-  border-color: var(--border-dark);
-  box-shadow: 0 0 0 3px var(--gray-100);
-}
-
-.search-icon {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--gray-400);
-  pointer-events: none;
-}
-
-.search-shortcut {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  padding: 2px 6px;
-  font-size: 11px;
   font-family: var(--font-body);
-  background-color: var(--accent);
-  border-radius: var(--radius-sm);
-  color: var(--gray-600);
 }
 
 /* ============================================
-   COLLAPSIBLE SECTION STYLES
+   CARD STYLES
+   ============================================ */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  border-color: var(--gray-300);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* ============================================
+   SECTION HEADER (Notion-like)
    ============================================ */
 
 .section-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: var(--space-md) var(--space-lg);
-  background-color: var(--surface-elevated);
-  border-bottom: 1px solid var(--border);
+  gap: 8px;
+  padding: 10px 12px;
+  margin: 0;
+  border-radius: 6px;
   cursor: pointer;
-  transition: background-color var(--transition-fast);
+  transition: background-color 0.1s ease;
 }
 
 .section-header:hover {
-  background-color: var(--gray-50);
+  background: var(--gray-50);
+}
+
+.section-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gray-100);
+  border-radius: 4px;
+  color: var(--gray-600);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.section-title {
+  flex: 1;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--gray-800);
 }
 
 .section-actions {
   display: flex;
   align-items: center;
-  gap: var(--space-xs);
-}
-
-.section-action-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-sm);
-  border: none;
-  background-color: transparent;
-  color: var(--gray-500);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.section-action-btn:hover {
-  background-color: var(--accent);
-  color: var(--foreground);
-}
-
-.section-content {
-  padding: var(--space-lg);
-  transition: all var(--transition-base);
-}
-
-.section-content.collapsed {
-  padding: 0;
+  gap: 4px;
   opacity: 0;
-  overflow: hidden;
+  transition: opacity 0.1s ease;
+}
+
+.section-header:hover .section-actions {
+  opacity: 1;
 }
 
 /* ============================================
-   STRUCTURED FIELD STYLES
-   ============================================ */
-
-.structured-field {
-  margin-bottom: var(--space-lg);
-  padding: var(--space-md);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background-color: var(--surface);
-  transition: all var(--transition-fast);
-}
-
-.structured-field:hover {
-  border-color: var(--border-dark);
-}
-
-.structured-field:focus-within {
-  border-color: var(--gray-400);
-  box-shadow: 0 0 0 3px var(--gray-100);
-}
-
-.field-label {
-  display: block;
-  font-family: var(--font-ui);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--gray-600);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: var(--space-sm);
-}
-
-.field-hint {
-  margin-top: var(--space-md);
-  padding: var(--space-md);
-  background-color: var(--gray-50);
-  border-left: 2px solid var(--gray-300);
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-}
-
-.field-hint-title {
-  font-family: var(--font-ui);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--gray-500);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: var(--space-xs);
-}
-
-.field-example {
-  font-family: var(--font-body);
-  font-size: 13px;
-  color: var(--gray-600);
-  line-height: 1.7;
-}
-
-/* ============================================
-   HINT PANEL STYLES (Interactive)
+   HINT PANEL (Notion-like)
    ============================================ */
 
 .hint-panel {
   position: fixed;
+  right: 24px;
   top: 80px;
-  right: var(--space-lg);
-  width: 380px;
+  width: 360px;
   max-height: calc(100vh - 100px);
   overflow-y: auto;
-  background-color: var(--surface-elevated);
+  background: var(--surface-elevated);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  z-index: 50;
-  animation: slideIn var(--transition-base);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  z-index: 100;
 }
 
-@keyframes slideIn {
-  from {
-    transform: translateX(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-.hint-panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-md) var(--space-lg);
+.hint-panel-search {
+  position: relative;
+  padding: 12px;
   border-bottom: 1px solid var(--border);
 }
 
-.hint-panel-title {
-  font-family: var(--font-ui);
-  font-size: 14px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
+.hint-panel-search input {
+  width: 100%;
+  padding: 8px 12px 8px 36px;
+  font-size: 13px;
+  background: var(--gray-50);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  outline: none;
+  transition: all 0.15s ease;
 }
 
-.hint-panel-content {
-  padding: var(--space-lg);
+.hint-panel-search input:focus {
+  background: var(--surface);
+  border-color: var(--gray-300);
 }
 
-.hint-panel-close {
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-sm);
-  border: none;
-  background-color: transparent;
-  color: var(--gray-500);
-  cursor: pointer;
+.hint-panel-search-icon {
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gray-400);
+}
+
+/* ============================================
+   ONBOARDING FLOW STYLES
+   ============================================ */
+
+.onboarding-container {
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all var(--transition-fast);
+  background: linear-gradient(135deg, var(--gray-50) 0%, var(--surface) 100%);
 }
 
-.hint-panel-close:hover {
-  background-color: var(--accent);
+.onboarding-card {
+  width: 100%;
+  max-width: 520px;
+  padding: 48px;
+  background: var(--surface-elevated);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+}
+
+.onboarding-title {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
   color: var(--foreground);
 }
 
-/* ============================================
-   EXPORT MENU STYLES
-   ============================================ */
-
-.export-menu {
-  position: relative;
+.onboarding-subtitle {
+  font-size: 14px;
+  color: var(--gray-500);
+  margin-bottom: 32px;
 }
 
-.export-dropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  min-width: 220px;
-  background-color: var(--surface-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  padding: var(--space-sm);
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-8px);
-  transition: all var(--transition-base);
+.form-group {
+  margin-bottom: 20px;
 }
 
-.export-menu:hover .export-dropdown {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-}
-
-.export-option {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
-  padding: var(--space-md);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: background-color var(--transition-fast);
-}
-
-.export-option:hover {
-  background-color: var(--accent);
-}
-
-.export-option-icon {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--gray-100);
-  border-radius: var(--radius-sm);
+.form-label {
+  display: block;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 500;
   color: var(--gray-700);
+  margin-bottom: 8px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 14px;
+  background: var(--gray-50);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.form-input:focus {
+  background: var(--surface);
+  border-color: var(--gray-400);
+  box-shadow: 0 0 0 3px var(--gray-100);
 }
 
 /* ============================================
-   SCROLLBAR STYLES (Custom)
+   SCROLLBAR (Cross-browser)
    ============================================ */
 
 ::-webkit-scrollbar {
@@ -577,54 +625,82 @@ p {
   background: var(--gray-400);
 }
 
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--gray-300) var(--gray-100);
+}
+
 /* ============================================
    UTILITY CLASSES
    ============================================ */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
 
 .text-balance {
   text-wrap: balance;
 }
 
-.prose {
-  font-family: var(--font-body);
-  font-size: 15px;
-  line-height: 1.7;
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.prose h4 {
-  font-family: var(--font-ui);
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--gray-700);
-  margin-top: var(--space-lg);
-  margin-bottom: var(--space-sm);
-}
-
-.prose ul, .prose ol {
-  margin-left: var(--space-lg);
-  margin-bottom: 1em;
-}
-
-.prose li {
-  margin-bottom: var(--space-xs);
-}
-
-.prose blockquote {
-  border-left: 3px solid var(--gray-300);
-  padding-left: var(--space-lg);
-  margin: var(--space-lg) 0;
-  color: var(--gray-600);
-  font-style: italic;
-}
-
-/* Focus visible for accessibility */
+/* Focus visible */
 :focus-visible {
   outline: 2px solid var(--gray-400);
   outline-offset: 2px;
 }
 
-/* Selection color */
-::selection {
-  background-color: var(--gray-200);
-  color: var(--foreground);
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.2s ease;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.15s ease;
 }

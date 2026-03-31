@@ -22,6 +22,17 @@ A PRD is a living document. Proper versioning prevents confusion and ensures eve
 
 3. **Keep approvers current** - If requirements change significantly, re-approve. Don't let stale approvals haunt you.
 
+### Example Table
+
+| Field | Example Value |
+|-------|---------------|
+| Document Owner | Jane Doe (jane@company.com) |
+| Engineering Lead | John Smith |
+| Design Lead | Sarah Chen |
+| Status | In Review |
+| Version | 1.3 |
+| Target Launch | 2024-06-15 |
+
 ### From the Trenches
 
 > "I once had engineering build to v1.2 while I was reviewing v1.4. Cost us 3 weeks. Now I hyper-obsess on version control."
@@ -177,6 +188,15 @@ A vague problem = vague solution. Invest time here.
 ❌ **Vague:** "Users find onboarding difficult"
 ✅ **Specific:** "New SMB customers take 14 days average to activate, with 40% dropping off before completing setup. This costs us ~$2M annually in lost ARR."
 
+### Problem Analysis Table
+
+| Aspect | Example |
+|--------|---------|
+| Affected Users | New SMB customers (40% of signups) |
+| Frequency | 4 out of 10 users drop off |
+| Severity | $2M annual ARR loss |
+| Workarounds | Manual CSV imports, support tickets |
+
 ### Evidence Hierarchy
 
 From strongest to weakest:
@@ -318,6 +338,15 @@ People don't buy products. They "hire" them to do a job.
 **Leading:** Feature adoption, activation rate (predict what will happen)
 
 You need both.
+
+### Example Metrics Table
+
+| Metric | Baseline | Target | Timeline | Owner |
+|--------|----------|--------|----------|-------|
+| Activation Rate | 45% | 65% | 6 weeks | Product |
+| Week 1 Retention | 30% | 50% | 8 weeks | Growth |
+| Feature Adoption | 0% | 40% | 3 months | Product |
+| Support Tickets | 100/week | 50/week | 4 weeks | Support |
 
 ### The HEART Framework (Google)
 

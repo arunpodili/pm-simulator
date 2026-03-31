@@ -1,22 +1,52 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useUser } from "@/context/UserContext";
 import { industries } from "@/data/industries";
 import { scenarios } from "@/data/scenarios";
-import { prdFeatureLaunchTemplate } from "@/data/templates/prd-feature-launch";
-import { IndustryId, ScenarioId } from "@/types";
+import { prdSaaSTemplate } from "@/data/templates/prd-saas";
+import { prdFinTechTemplate } from "@/data/templates/prd-fintech";
+import { prdHealthTemplate } from "@/data/templates/prd-health";
+import { prdEcommerceTemplate } from "@/data/templates/prd-ecommerce";
+import { prdAITemplate } from "@/data/templates/prd-ai";
+import { IndustryId, ScenarioId, Template } from "@/types";
 import { ChevronRight, Lightbulb } from "lucide-react";
 import TemplateWorkspace from "@/components/TemplateWorkspace";
 
+const industryTemplates: Record<string, Template> = {
+  'saas': prdSaaSTemplate,
+  'fintech': prdFinTechTemplate,
+  'health': prdHealthTemplate,
+  'ecommerce': prdEcommerceTemplate,
+  'ai-ml': prdAITemplate,
+};
+
 export default function SimulatorPage() {
+  const router = useRouter();
+  const { isOnboarded } = useUser();
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [selectedIndustry, setSelectedIndustry] = useState<IndustryId | null>(null);
   const [selectedScenario, setSelectedScenario] = useState<ScenarioId | null>(null);
 
+  // Redirect to onboarding if not completed
+  if (!isOnboarded) {
+    router.push('/onboarding');
+    return null;
+  }
+
+  // Get template based on industry
+  const getTemplate = () => {
+    if (!selectedIndustry) return null;
+    return industryTemplates[selectedIndustry] || prdSaaSTemplate;
+  };
+
   if (step === 4) {
+    const template = getTemplate();
+    if (!template) return null;
     return (
       <TemplateWorkspace
-        template={prdFeatureLaunchTemplate}
+        template={template}
         onBack={() => setStep(1)}
       />
     );
