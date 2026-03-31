@@ -1,0 +1,167 @@
+import { Framework } from '@/types';
+
+export const frameworks: Framework[] = [
+  {
+    id: 'rice',
+    name: 'RICE Prioritization',
+    description: 'Score initiatives by Reach, Impact, Confidence, and Effort',
+    whenToUse: 'When you need to prioritize multiple initiatives objectively and compare their relative value',
+    steps: [
+      'Define the time period for Reach (e.g., customers per quarter)',
+      'Estimate Reach: How many users/customers will this impact?',
+      'Estimate Impact: Use 3=massive, 2=high, 1=medium, 0.5=low, 0.25=minimal',
+      'Estimate Confidence: 100%=high confidence, 80%=medium, 50%=low',
+      'Estimate Effort: Person-months or person-weeks',
+      'Calculate: RICE Score = (Reach × Impact × Confidence) / Effort',
+      'Rank initiatives by RICE score',
+    ],
+    outputExample: 'Feature A: RICE = (1000 × 2 × 0.8) / 3 = 533 | Feature B: RICE = (500 × 3 × 0.9) / 2 = 675 → Prioritize Feature B',
+  },
+  {
+    id: 'jtbd',
+    name: 'Jobs to Be Done (JTBD)',
+    description: 'Understand the underlying "job" customers hire your product to do',
+    whenToUse: 'When defining user needs, writing user stories, or understanding why customers use your product',
+    steps: [
+      'Identify the main job: "When _____, I want to _____, so I can _____"',
+      'Map related jobs: Main job, Emotional job, Social job',
+      'Identify pain points with current solutions',
+      'Define desired outcomes (speed, quality, convenience)',
+      'Map your product capabilities to jobs',
+      'Identify unmet or underserved jobs',
+    ],
+    outputExample: 'Job Statement: "When I\'m preparing a quarterly report, I want to quickly pull accurate metrics, so I can present confidently to leadership"',
+  },
+  {
+    id: 'kano',
+    name: 'Kano Model',
+    description: 'Categorize features by how they impact customer satisfaction',
+    whenToUse: 'When deciding which features to build and understanding their impact on customer delight',
+    steps: [
+      'List potential features or improvements',
+      'For each feature, ask: Functional question ("How do you feel if feature is present?") and Dysfunctional question ("How do you feel if feature is absent?")',
+      'Categorize: Basic (Must-have), Performance (More is better), Delighter (Unexpected)',
+      'Plot on Kano matrix',
+      'Prioritize: Basics first, then Performance, then Delighters',
+      'Remember: Delighters become Performance over time',
+    ],
+    outputExample: 'Basic: Login security | Performance: Fast page load | Delighter: AI-powered suggestions',
+  },
+  {
+    id: 'okrs',
+    name: 'OKRs (Objectives & Key Results)',
+    description: 'Set ambitious goals with measurable outcomes',
+    whenToUse: 'When setting quarterly or annual goals for product teams',
+    steps: [
+      'Define Objective: Qualitative, inspirational, time-bound goal',
+      'Define 3-5 Key Results: Quantitative metrics that prove you achieved the objective',
+      'Ensure KRs are outcome-based, not output-based',
+      'Set confidence level (baseline: 50%, target: 70%)',
+      'Define initiatives that drive KRs',
+      'Review progress weekly',
+    ],
+    outputExample: 'Objective: "Delight enterprise customers with seamless onboarding" | KR1: Reduce TTV from 14 days to 7 days | KR2: Achieve 85% activation rate | KR3: NPS > 50 for enterprise segment',
+  },
+  {
+    id: 'lean-canvas',
+    name: 'Lean Canvas',
+    description: 'One-page business plan for validating product-market fit',
+    whenToUse: 'When exploring a new product idea or validating a new market',
+    steps: [
+      'Problem: Top 3 problems you\'re solving',
+      'Customer Segments: Target customers and early adopters',
+      'Unique Value Proposition: Clear message on why you\'re different',
+      'Solution: Top 3 features solving the problems',
+      'Channels: How you reach customers',
+      'Revenue Streams: Pricing and monetization',
+      'Cost Structure: Fixed and variable costs',
+      'Key Metrics: Leading indicators of success',
+      'Unfair Advantage: What can\'t be easily copied',
+    ],
+    outputExample: 'Problem: SMBs struggle with complex, expensive HR software | UVP: "HR software that grows with you, priced for where you are"',
+  },
+  {
+    id: 'opportunity-solution-tree',
+    name: 'Opportunity Solution Tree',
+    description: 'Visual map connecting outcomes to opportunities and solutions',
+    whenToUse: 'When exploring multiple paths to achieve a desired outcome',
+    steps: [
+      'Define desired outcome (top of tree)',
+      'Map customer opportunities (pain points, needs, desires)',
+      'Brainstorm multiple solutions for each opportunity',
+      'Prioritize solutions based on impact and feasibility',
+      'Design experiments to test solutions',
+      'Iterate based on learnings',
+    ],
+    outputExample: 'Outcome: Increase trial-to-paid conversion | Opportunity: Users don\'t see value in trial | Solutions: Guided onboarding, feature unlock emails, in-app tutorials',
+  },
+  {
+    id: 'north-star-metric',
+    name: 'North Star Metric',
+    description: 'Single metric that best captures the value your product delivers',
+    whenToUse: 'When aligning teams around a common goal or defining product success',
+    steps: [
+      'Identify your value proposition',
+      'Define the metric that best captures value delivery',
+      'Ensure it\'s a ratio or rate (not absolute)',
+      'Make it measurable and actionable',
+      'Align teams around moving this metric',
+      'Review and refine quarterly',
+    ],
+    outputExample: 'Spotify: Time spent listening | Airbnb: Nights booked | Facebook: DAU | SaaS: Weekly active teams',
+  },
+  {
+    id: 'heart-framework',
+    name: 'HEART Framework',
+    description: 'Measure user experience across Happiness, Engagement, Adoption, Retention, Task Success',
+    whenToUse: 'When defining UX metrics or measuring product experience',
+    steps: [
+      'Happiness: NPS, CSAT, CES, app store ratings',
+      'Engagement: Frequency, intensity, depth of use',
+      'Adoption: New users, feature adoption rate',
+      'Retention: Active users, churn rate, cohort analysis',
+      'Task Success: Completion rate, error rate, time on task',
+      'Define goals and signals for each',
+      'Set targets and measure consistently',
+    ],
+    outputExample: 'Happiness: NPS > 40 | Engagement: 3+ sessions/week | Adoption: 60% feature adoption in 30 days | Retention: <5% monthly churn | Task Success: 95% completion rate',
+  },
+  {
+    id: 'aar',
+    name: 'After Action Review (AAR)',
+    description: 'Structured debrief to capture lessons learned',
+    whenToUse: 'After incidents, launches, or major milestones',
+    steps: [
+      'What was supposed to happen? (intent)',
+      'What actually happened? (reality)',
+      'Why was there a difference? (analysis)',
+      'What did we learn? (insights)',
+      'What will we do differently next time? (action items)',
+      'Document and share learnings',
+    ],
+    outputExample: 'Incident: API outage on 3/15 | Expected: 99.9% uptime | Actual: 2-hour outage | Root cause: Database connection pool exhaustion | Action: Implement connection pooling alerts',
+  },
+  {
+    id: 'swot',
+    name: 'SWOT Analysis',
+    description: 'Evaluate Strengths, Weaknesses, Opportunities, and Threats',
+    whenToUse: 'When assessing competitive position or strategic direction',
+    steps: [
+      'Strengths: Internal advantages (team, tech, brand)',
+      'Weaknesses: Internal disadvantages (gaps, limitations)',
+      'Opportunities: External favorable conditions (market trends, gaps)',
+      'Threats: External challenges (competition, regulation)',
+      'Connect: How can strengths address opportunities?',
+      'Mitigate: How can we fix weaknesses and defend against threats?',
+    ],
+    outputExample: 'Strength: Best-in-class ML team | Weakness: Limited sales bandwidth | Opportunity: Growing demand for AI | Threat: Big Tech entering space',
+  },
+];
+
+export const getFrameworkById = (id: string): Framework | undefined => {
+  return frameworks.find((f) => f.id === id);
+};
+
+export const getFrameworksByIds = (ids: string[]): Framework[] => {
+  return ids.map((id) => getFrameworkById(id)).filter(Boolean) as Framework[];
+};
