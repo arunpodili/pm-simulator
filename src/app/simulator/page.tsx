@@ -10,7 +10,11 @@ import { prdFinTechTemplate } from "@/data/templates/prd-fintech";
 import { prdHealthTemplate } from "@/data/templates/prd-health";
 import { prdEcommerceTemplate } from "@/data/templates/prd-ecommerce";
 import { prdAITemplate } from "@/data/templates/prd-ai";
-import { IndustryId, ScenarioId, Template } from "@/types";
+import { criticalThinkingTemplate } from "@/data/templates/framework-critical-thinking";
+import { stakeholderManagementTemplate } from "@/data/templates/framework-stakeholder-management";
+import { coreCompetenciesTemplate } from "@/data/templates/framework-core-competencies";
+import { domainVerticalsTemplate } from "@/data/templates/framework-domain-verticals";
+import { IndustryId, ScenarioId, Template, TemplateCategory } from "@/types";
 import { ChevronRight, Lightbulb } from "lucide-react";
 import TemplateWorkspace from "@/components/TemplateWorkspace";
 
@@ -22,12 +26,21 @@ const industryTemplates: Record<string, Template> = {
   'ai-ml': prdAITemplate,
 };
 
+const frameworkTemplates: Template[] = [
+  criticalThinkingTemplate,
+  stakeholderManagementTemplate,
+  coreCompetenciesTemplate,
+  domainVerticalsTemplate,
+];
+
 export default function SimulatorPage() {
   const router = useRouter();
   const { isOnboarded } = useUser();
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [selectedIndustry, setSelectedIndustry] = useState<IndustryId | null>(null);
   const [selectedScenario, setSelectedScenario] = useState<ScenarioId | null>(null);
+  const [templateType, setTemplateType] = useState<TemplateCategory | null>(null);
+  const [selectedFramework, setSelectedFramework] = useState<Template | null>(null);
 
   // Redirect to onboarding if not completed
   if (!isOnboarded) {
@@ -35,8 +48,9 @@ export default function SimulatorPage() {
     return null;
   }
 
-  // Get template based on industry
+  // Get template based on industry or framework
   const getTemplate = () => {
+    if (selectedFramework) return selectedFramework;
     if (!selectedIndustry) return null;
     return industryTemplates[selectedIndustry] || prdSaaSTemplate;
   };
@@ -72,19 +86,23 @@ export default function SimulatorPage() {
       </header>
 
       <div className="container mx-auto px-6 py-12">
-        {/* Step 1: Industry */}
+        {/* Step 1: Template Type Selection */}
         {step === 1 && (
-          <div className="max-w-5xl mx-auto">
-            <h1 className="text-4xl font-serif font-bold mb-4">Select Your Industry</h1>
+          <div className="max-w-6xl mx-auto">
+            <h1 className="text-4xl font-serif font-bold mb-4">Choose Template Type</h1>
             <p className="text-lg text-gray-600 mb-12">
-              Each industry has unique regulations, metrics, and stakeholders.
+              Select a PRD template for your industry or a decision framework for skill-building.
             </p>
-            <div className="grid md:grid-cols-3 gap-6">
+
+            {/* PRD Templates Section */}
+            <h2 className="text-2xl font-serif font-semibold mb-6">Industry PRD Templates</h2>
+            <div className="grid md:grid-cols-3 gap-6 mb-12">
               {industries.map((industry) => (
                 <button
                   key={industry.id}
                   onClick={() => {
                     setSelectedIndustry(industry.id);
+                    setTemplateType('prd');
                     setStep(2);
                   }}
                   className="p-8 bg-white border border-gray-200 rounded-xl hover:border-black transition-all text-left"
@@ -110,17 +128,48 @@ export default function SimulatorPage() {
                 </button>
               ))}
             </div>
+
+            {/* Framework Templates Section */}
+            <h2 className="text-2xl font-serif font-semibold mb-6">Decision Frameworks</h2>
+            <div className="grid md:grid-cols-2 gap-6">
+              {frameworkTemplates.map((framework) => (
+                <button
+                  key={framework.id}
+                  onClick={() => {
+                    setSelectedFramework(framework);
+                    setTemplateType('framework');
+                    setStep(3);
+                  }}
+                  className="p-8 bg-white border border-gray-200 rounded-xl hover:border-black transition-all text-left"
+                >
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Lightbulb className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-serif font-semibold text-lg mb-1">{framework.name}</h3>
+                      <p className="text-sm text-gray-600">{framework.description}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 text-xs text-gray-500">
+                    <span>⏱ {framework.estimatedCompletionTime}</span>
+                    <span>•</span>
+                    <span>{framework.frameworkIds.join(', ')}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
-        {/* Step 2: Scenario */}
-        {step === 2 && selectedIndustry && (
+        {/* Step 2: Scenario (only for PRD templates) */}
+        {step === 2 && selectedIndustry && templateType === 'prd' && (
           <div className="max-w-5xl mx-auto">
             <button
               onClick={() => setStep(1)}
               className="text-sm text-gray-600 hover:text-black mb-6"
             >
-              ← Back to industries
+              ← Back to template types
             </button>
             <h1 className="text-4xl font-serif font-bold mb-4">
               Select Scenario
@@ -154,9 +203,38 @@ export default function SimulatorPage() {
           </div>
         )}
 
-        {/* Step 3: Start */}
-        {step === 3 && selectedScenario && (
+        {/* Step 2: Framework Selected - Go directly to confirmation */}
+        {step === 2 && selectedFramework && (
           <div className="max-w-2xl mx-auto text-center">
+            <button
+              onClick={() => setStep(1)}
+              className="text-sm text-gray-600 hover:text-black mb-6"
+            >
+              ← Back to template types
+            </button>
+            <h1 className="text-4xl font-serif font-bold mb-4">Ready to Begin?</h1>
+            <p className="text-lg text-gray-600 mb-12">
+              You&apos;re about to start the <strong>{selectedFramework.name}</strong> framework.
+            </p>
+            <button
+              onClick={() => setStep(4)}
+              className="inline-flex items-center gap-2 px-8 py-4 bg-black text-white font-medium rounded-lg hover:bg-gray-800"
+            >
+              Open Framework
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+        )}
+
+        {/* Step 3: Start (for PRD templates after scenario selection) */}
+        {step === 3 && selectedScenario && templateType === 'prd' && (
+          <div className="max-w-2xl mx-auto text-center">
+            <button
+              onClick={() => setStep(2)}
+              className="text-sm text-gray-600 hover:text-black mb-6"
+            >
+              ← Back to scenarios
+            </button>
             <h1 className="text-4xl font-serif font-bold mb-4">Ready to Begin?</h1>
             <p className="text-lg text-gray-600 mb-12">
               You&apos;re about to start the <strong>{scenarios.find(s => s.id === selectedScenario)?.name}</strong> template.

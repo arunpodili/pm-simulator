@@ -2,6 +2,8 @@
 
 export type IndustryId = 'saas' | 'fintech' | 'health' | 'ecommerce' | 'ai_ml';
 
+export type TemplateCategory = 'prd' | 'framework';
+
 export interface Industry {
   id: IndustryId;
   name: string;
@@ -56,16 +58,22 @@ export interface Framework {
   outputExample: string;
 }
 
+export interface TableSchema {
+  columns: string[];
+  rows: string[][];
+}
+
 export interface TemplateSection {
   id: string;
   title: string;
   description: string;
-  fieldType: 'text' | 'textarea' | 'markdown' | 'select' | 'multi-select' | 'number' | 'date' | 'checkbox';
+  fieldType: 'text' | 'textarea' | 'markdown' | 'select' | 'multi-select' | 'number' | 'date' | 'checkbox' | 'table';
   required: boolean;
   placeholder?: string;
   helpText?: string;
   learnContentId?: string;
   options?: { value: string; label: string }[];
+  tableSchema?: TableSchema;
   validation?: {
     minLength?: number;
     maxLength?: number;
@@ -85,6 +93,7 @@ export interface Template {
   outputFormat: 'markdown' | 'google-docs' | 'notion' | 'confluence';
   estimatedCompletionTime: string;
   version: string;
+  category?: TemplateCategory;
 }
 
 export interface LearnContent {
