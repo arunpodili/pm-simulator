@@ -15,15 +15,16 @@ import { stakeholderManagementTemplate } from "@/data/templates/framework-stakeh
 import { coreCompetenciesTemplate } from "@/data/templates/framework-core-competencies";
 import { domainVerticalsTemplate } from "@/data/templates/framework-domain-verticals";
 import { IndustryId, ScenarioId, Template, TemplateCategory } from "@/types";
-import { ChevronRight, Lightbulb } from "lucide-react";
+import { ChevronRight, Lightbulb, Brain, Target, Zap, Award } from "lucide-react";
 import TemplateWorkspace from "@/components/TemplateWorkspace";
+import GlobalNav from "@/components/GlobalNav";
 
 const industryTemplates: Record<string, Template> = {
   'saas': prdSaaSTemplate,
   'fintech': prdFinTechTemplate,
   'health': prdHealthTemplate,
   'ecommerce': prdEcommerceTemplate,
-  'ai-ml': prdAITemplate,
+  'ai_ml': prdAITemplate,
 };
 
 const frameworkTemplates: Template[] = [
@@ -67,35 +68,47 @@ export default function SimulatorPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="border-b border-gray-100 sticky top-0 bg-white/80 backdrop-blur z-50">
-        <div className="container mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
-              <Lightbulb className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-serif font-bold text-lg">PM Simulator</span>
-          </div>
-          <nav className="flex items-center gap-6">
-            <a href="/" className="text-sm text-gray-600 hover:text-black">Home</a>
-            <a href="/case-studies" className="text-sm text-gray-600 hover:text-black">Case Studies</a>
-            <a href="/forum" className="text-sm text-gray-600 hover:text-black">Forum</a>
-          </nav>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      <GlobalNav />
 
       <div className="container mx-auto px-6 py-12">
         {/* Step 1: Template Type Selection */}
         {step === 1 && (
           <div className="max-w-6xl mx-auto">
-            <h1 className="text-4xl font-serif font-bold mb-4">Choose Template Type</h1>
-            <p className="text-lg text-gray-600 mb-12">
-              Select a PRD template for your industry or a decision framework for skill-building.
-            </p>
+            {/* Hero Section */}
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center">
+                  <Zap className="w-6 h-6 text-white" />
+                </div>
+              </div>
+              <h1 className="text-4xl font-serif font-bold mb-4">PM Simulator</h1>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                Practice real-world product management scenarios with industry-specific templates and decision frameworks.
+                Build your skills through hands-on simulation.
+              </p>
+            </div>
+
+            {/* Key Differences Banner */}
+            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-8">
+              <div className="flex items-start gap-3">
+                <Brain className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-semibold text-blue-900 text-sm">Simulator vs Mastery Lab</h3>
+                  <p className="text-sm text-blue-700 mt-1">
+                    <strong>Simulator:</strong> Practice real PM work with industry PRDs and scenarios (feature launches, strategy docs).
+                    <br />
+                    <strong>Mastery Lab:</strong> Learn PM fundamentals through guided exercises and skill-building templates.
+                  </p>
+                </div>
+              </div>
+            </div>
 
             {/* PRD Templates Section */}
-            <h2 className="text-2xl font-serif font-semibold mb-6">Industry PRD Templates</h2>
+            <h2 className="text-2xl font-serif font-semibold mb-6 flex items-center gap-2">
+              <Target className="w-6 h-6" />
+              Industry PRD Templates
+            </h2>
             <div className="grid md:grid-cols-3 gap-6 mb-12">
               {industries.map((industry) => (
                 <button
@@ -105,32 +118,42 @@ export default function SimulatorPage() {
                     setTemplateType('prd');
                     setStep(2);
                   }}
-                  className="p-8 bg-white border border-gray-200 rounded-xl hover:border-black transition-all text-left"
+                  className="group p-6 bg-white border border-gray-200 rounded-xl hover:border-black hover:shadow-lg transition-all text-left"
                 >
-                  <div
-                    className="w-12 h-12 rounded-lg mb-4 flex items-center justify-center text-white font-bold text-xl"
-                    style={{ backgroundColor: industry.color }}
-                  >
-                    {industry.name[0]}
+                  <div className="flex items-start gap-4 mb-4">
+                    <div
+                      className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-lg flex-shrink-0"
+                      style={{ backgroundColor: industry.color }}
+                    >
+                      {industry.name.charAt(0)}
+                    </div>
+                    <div>
+                      <h3 className="font-serif font-semibold text-lg">{industry.name}</h3>
+                    </div>
                   </div>
-                  <h3 className="font-serif font-semibold text-lg mb-2">{industry.name}</h3>
                   <p className="text-sm text-gray-600 mb-4">{industry.description}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {industry.keyMetrics.slice(0, 3).map((metric) => (
-                      <span
-                        key={metric}
-                        className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded"
-                      >
-                        {metric.length > 25 ? metric.substring(0, 25) + "..." : metric}
-                      </span>
-                    ))}
+                  <div className="space-y-2">
+                    <div className="text-xs font-medium text-gray-400 uppercase tracking-wider">Key Metrics</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {industry.keyMetrics.slice(0, 3).map((metric) => (
+                        <span
+                          key={metric}
+                          className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded group-hover:bg-gray-200 transition-colors"
+                        >
+                          {metric.length > 25 ? metric.substring(0, 25) + "..." : metric}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </button>
               ))}
             </div>
 
             {/* Framework Templates Section */}
-            <h2 className="text-2xl font-serif font-semibold mb-6">Decision Frameworks</h2>
+            <h2 className="text-2xl font-serif font-semibold mb-6 flex items-center gap-2">
+              <Award className="w-6 h-6" />
+              Decision Frameworks
+            </h2>
             <div className="grid md:grid-cols-2 gap-6">
               {frameworkTemplates.map((framework) => (
                 <button
@@ -140,21 +163,24 @@ export default function SimulatorPage() {
                     setTemplateType('framework');
                     setStep(3);
                   }}
-                  className="p-8 bg-white border border-gray-200 rounded-xl hover:border-black transition-all text-left"
+                  className="group p-6 bg-white border border-gray-200 rounded-xl hover:border-black hover:shadow-lg transition-all text-left"
                 >
-                  <div className="flex items-start gap-3 mb-4">
+                  <div className="flex items-start gap-3 mb-3">
                     <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Lightbulb className="w-5 h-5 text-white" />
+                      <Brain className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <h3 className="font-serif font-semibold text-lg mb-1">{framework.name}</h3>
-                      <p className="text-sm text-gray-600">{framework.description}</p>
+                      <h3 className="font-serif font-semibold text-lg">{framework.name}</h3>
                     </div>
                   </div>
+                  <p className="text-sm text-gray-600 mb-4">{framework.description}</p>
                   <div className="flex items-center gap-4 text-xs text-gray-500">
-                    <span>⏱ {framework.estimatedCompletionTime}</span>
+                    <span className="flex items-center gap-1">
+                      <Zap className="w-3 h-3" />
+                      {framework.estimatedCompletionTime}
+                    </span>
                     <span>•</span>
-                    <span>{framework.frameworkIds.join(', ')}</span>
+                    <span className="truncate">{framework.frameworkIds.join(', ')}</span>
                   </div>
                 </button>
               ))}
@@ -167,16 +193,17 @@ export default function SimulatorPage() {
           <div className="max-w-5xl mx-auto">
             <button
               onClick={() => setStep(1)}
-              className="text-sm text-gray-600 hover:text-black mb-6"
+              className="flex items-center gap-2 text-sm text-gray-600 hover:text-black mb-6"
             >
-              ← Back to template types
+              <ChevronRight className="w-4 h-4 rotate-180" />
+              Back to industries
             </button>
-            <h1 className="text-4xl font-serif font-bold mb-4">
-              Select Scenario
-            </h1>
-            <p className="text-lg text-gray-600 mb-12">
-              What are you working on today?
-            </p>
+
+            <div className="mb-8">
+              <h2 className="text-3xl font-serif font-bold mb-2">Select Scenario</h2>
+              <p className="text-gray-600">What are you working on today?</p>
+            </div>
+
             <div className="grid md:grid-cols-2 gap-6">
               {scenarios
                 .filter((s) => s.applicableIndustries.includes(selectedIndustry))
@@ -187,15 +214,20 @@ export default function SimulatorPage() {
                       setSelectedScenario(scenario.id);
                       setStep(3);
                     }}
-                    className="p-8 bg-white border border-gray-200 rounded-xl hover:border-black transition-all text-left"
+                    className="group p-6 bg-white border border-gray-200 rounded-xl hover:border-black hover:shadow-lg transition-all text-left"
                   >
-                    <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-start justify-between mb-3">
                       <h3 className="font-serif font-semibold text-xl">{scenario.name}</h3>
-                      <ChevronRight className="w-5 h-5 text-gray-400" />
+                      <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-black transition-colors" />
                     </div>
                     <p className="text-gray-600 mb-4">{scenario.description}</p>
-                    <div className="text-sm text-gray-500">
-                      ⏱ {scenario.estimatedTime}
+                    <div className="flex items-center gap-4 text-sm text-gray-500">
+                      <span className="flex items-center gap-1">
+                        <Zap className="w-4 h-4" />
+                        {scenario.estimatedTime}
+                      </span>
+                      <span>•</span>
+                      <span>{scenario.outputTypes.slice(0, 2).join(', ')}</span>
                     </div>
                   </button>
                 ))}
@@ -208,21 +240,37 @@ export default function SimulatorPage() {
           <div className="max-w-2xl mx-auto text-center">
             <button
               onClick={() => setStep(1)}
-              className="text-sm text-gray-600 hover:text-black mb-6"
+              className="flex items-center gap-2 text-sm text-gray-600 hover:text-black mb-6 mx-auto"
             >
-              ← Back to template types
+              <ChevronRight className="w-4 h-4 rotate-180" />
+              Back to template types
             </button>
-            <h1 className="text-4xl font-serif font-bold mb-4">Ready to Begin?</h1>
-            <p className="text-lg text-gray-600 mb-12">
-              You&apos;re about to start the <strong>{selectedFramework.name}</strong> framework.
-            </p>
-            <button
-              onClick={() => setStep(4)}
-              className="inline-flex items-center gap-2 px-8 py-4 bg-black text-white font-medium rounded-lg hover:bg-gray-800"
-            >
-              Open Framework
-              <ChevronRight className="w-5 h-5" />
-            </button>
+
+            <div className="bg-white border border-gray-200 rounded-xl p-8">
+              <div className="w-16 h-16 bg-black rounded-xl flex items-center justify-center mx-auto mb-4">
+                <Brain className="w-8 h-8 text-white" />
+              </div>
+              <h2 className="text-3xl font-serif font-bold mb-4">Ready to Begin?</h2>
+              <p className="text-gray-600 mb-6">
+                You&apos;re about to start the <strong>{selectedFramework.name}</strong> framework.
+              </p>
+              <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
+                <p className="text-sm text-gray-600 mb-2">{selectedFramework.description}</p>
+                <div className="flex items-center gap-4 text-xs text-gray-500">
+                  <span className="flex items-center gap-1">
+                    <Zap className="w-3 h-3" />
+                    {selectedFramework.estimatedCompletionTime}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setStep(4)}
+                className="inline-flex items-center gap-2 px-8 py-4 bg-black text-white font-medium rounded-lg hover:bg-gray-800 transition-colors"
+              >
+                Open Framework
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         )}
 
@@ -231,21 +279,39 @@ export default function SimulatorPage() {
           <div className="max-w-2xl mx-auto text-center">
             <button
               onClick={() => setStep(2)}
-              className="text-sm text-gray-600 hover:text-black mb-6"
+              className="flex items-center gap-2 text-sm text-gray-600 hover:text-black mb-6 mx-auto"
             >
-              ← Back to scenarios
+              <ChevronRight className="w-4 h-4 rotate-180" />
+              Back to scenarios
             </button>
-            <h1 className="text-4xl font-serif font-bold mb-4">Ready to Begin?</h1>
-            <p className="text-lg text-gray-600 mb-12">
-              You&apos;re about to start the <strong>{scenarios.find(s => s.id === selectedScenario)?.name}</strong> template.
-            </p>
-            <button
-              onClick={() => setStep(4)}
-              className="inline-flex items-center gap-2 px-8 py-4 bg-black text-white font-medium rounded-lg hover:bg-gray-800"
-            >
-              Open Template
-              <ChevronRight className="w-5 h-5" />
-            </button>
+
+            <div className="bg-white border border-gray-200 rounded-xl p-8">
+              <div className="w-16 h-16 bg-black rounded-xl flex items-center justify-center mx-auto mb-4">
+                <Target className="w-8 h-8 text-white" />
+              </div>
+              <h2 className="text-3xl font-serif font-bold mb-4">Ready to Begin?</h2>
+              <p className="text-gray-600 mb-6">
+                You&apos;re about to start the <strong>{scenarios.find(s => s.id === selectedScenario)?.name}</strong> template.
+              </p>
+              <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
+                <p className="text-sm text-gray-600 mb-2">{scenarios.find(s => s.id === selectedScenario)?.description}</p>
+                <div className="flex items-center gap-4 text-xs text-gray-500">
+                  <span className="flex items-center gap-1">
+                    <Zap className="w-3 h-3" />
+                    {scenarios.find(s => s.id === selectedScenario)?.estimatedTime}
+                  </span>
+                  <span>•</span>
+                  <span>{scenarios.find(s => s.id === selectedScenario)?.outputTypes.join(', ')}</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setStep(4)}
+                className="inline-flex items-center gap-2 px-8 py-4 bg-black text-white font-medium rounded-lg hover:bg-gray-800 transition-colors"
+              >
+                Open Template
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         )}
       </div>

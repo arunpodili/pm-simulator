@@ -25,6 +25,9 @@ export default function Home() {
             <Link href="/forum" className="text-sm text-gray-600 hover:text-black">
               Forum
             </Link>
+            <Link href="/mastery-lab" className="text-sm text-gray-600 hover:text-black">
+              Mastery Lab
+            </Link>
             <Link
               href="/simulator"
               className="bg-black text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-800"

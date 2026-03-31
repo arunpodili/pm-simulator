@@ -363,7 +363,6 @@ export const stakeholderManagementTemplate: Template = {
 | 1 | | | |
 | 2 | | | |
 | 3 | | | |`,
-      learnContentId: 'conflict-resolution',
     },
     {
       id: 'communication-plan',

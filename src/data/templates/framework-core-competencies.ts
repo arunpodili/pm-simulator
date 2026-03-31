@@ -179,7 +179,6 @@ export const coreCompetenciesTemplate: Template = {
 
 "In [X] years, we envision a world where [aspirational future state].
 Our product will [role in that world], creating [value] for [users]."`,
-      learnContentId: 'vision-strategy',
     },
     {
       id: 'strategy-statement',
@@ -188,7 +187,6 @@ Our product will [role in that world], creating [value] for [users]."`,
       fieldType: 'markdown',
       required: false,
       helpText: 'Strategy is about choices and trade-offs',
-      learnContentId: 'vision-strategy',
       placeholder: `**Strategy Statement (1-3 years):**
 
 "To achieve our vision, our strategy is to:
@@ -197,7 +195,6 @@ Our product will [role in that world], creating [value] for [users]."`,
 3. [Strategic pillar 3]
 
 We will win by [unique advantage] in the [market/segment]."`,
-      learnContentId: 'vision-strategy',
     },
     {
       id: 'strategy-checklist',
@@ -353,7 +350,6 @@ So that [outcome/benefit].
 - Code reviewed
 - Deployed to staging
 - Product approved`,
-      learnContentId: 'agile-methodologies',
     },
     {
       id: 'risk-identification',
@@ -433,7 +429,6 @@ So that [outcome/benefit].
       fieldType: 'markdown',
       required: false,
       helpText: 'Understand what drives your North Star',
-      learnContentId: 'metrics-definition',
       placeholder: `**Metric Hierarchy:**
 
 North Star Metric: []
@@ -449,7 +444,6 @@ North Star Metric: []
     └── Input Metric 3: []
             ├── Driver 3a: []
             └── Driver 3b: []`,
-      learnContentId: 'metrics-definition',
     },
     {
       id: 'guardrail-metrics',

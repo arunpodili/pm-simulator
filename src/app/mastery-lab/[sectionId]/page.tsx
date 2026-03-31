@@ -1,10 +1,7 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import { Template, TemplateFormState, LearnContent } from "@/types";
-import { learnContent } from "@/content/learn";
-import { generateMarkdown, generatePDFContent } from "@/lib/documentGenerator";
-import { useUser } from "@/context/UserContext";
+import { use, useState, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Lightbulb,
   X,
@@ -25,64 +22,122 @@ import {
   CheckSquare,
   Plus,
   Trash2,
-  Sparkles,
+  Brain,
   CheckCircle,
-  Wand2,
+  Clock,
+  Sparkles,
   MessageSquare,
+  Wand2
 } from "lucide-react";
+import { TemplateSection, TableSchema } from "@/types";
 
-interface TemplateWorkspaceProps {
-  template: Template;
-  onBack: () => void;
+// Import all templates
+import { productMindsetTemplate } from "@/data/mastery-lab/section1-product-mindset";
+import { creativityInnovationTemplate } from "@/data/mastery-lab/section2-creativity-innovation";
+import { criticalThinkingTemplate } from "@/data/mastery-lab/section3-critical-thinking";
+import { stakeholderManagementTemplate } from "@/data/mastery-lab/section4-stakeholder-management";
+import { coreCompetenciesTemplate } from "@/data/mastery-lab/section5-core-competencies";
+import { domainVerticalsTemplate } from "@/data/mastery-lab/section6-domain-verticals";
+import { communicationStorytellingTemplate } from "@/data/mastery-lab/section7-communication-storytelling";
+import { leadershipGrowthTemplate } from "@/data/mastery-lab/section8-leadership-growth";
+import { booksResourcesTemplate } from "@/data/mastery-lab/section9-books-resources";
+import { practicalApplicationTemplate } from "@/data/mastery-lab/section10-practical-application";
+
+const TEMPLATES: Record<string, any> = {
+  'mastery-section-1': productMindsetTemplate,
+  'mastery-section-2': creativityInnovationTemplate,
+  'mastery-section-3': criticalThinkingTemplate,
+  'mastery-section-4': stakeholderManagementTemplate,
+  'mastery-section-5': coreCompetenciesTemplate,
+  'mastery-section-6': domainVerticalsTemplate,
+  'mastery-section-7': communicationStorytellingTemplate,
+  'mastery-section-8': leadershipGrowthTemplate,
+  'mastery-section-9': booksResourcesTemplate,
+  'mastery-section-10': practicalApplicationTemplate,
+};
+
+interface FormState {
+  [sectionId: string]: any;
 }
 
-export default function TemplateWorkspace({ template, onBack }: TemplateWorkspaceProps) {
-  const { profile } = useUser();
-  const [formState, setFormState] = useState<TemplateFormState>({});
+interface TableData {
+  [sectionId: string]: any[];
+}
+
+interface CheckboxState {
+  [sectionId: string]: { [optionValue: string]: boolean };
+}
+
+export default function MasteryTemplatePage({ params }: { params: { sectionId: string } }) {
+  const { sectionId } = params;
+  const router = useRouter();
+  const template = TEMPLATES[sectionId];
+
+  const [formState, setFormState] = useState<FormState>({});
+  const [tableData, setTableData] = useState<TableData>({});
+  const [checkboxState, setCheckboxState] = useState<CheckboxState>({});
   const [hiddenSections, setHiddenSections] = useState<Set<string>>(new Set());
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
   const [openHintPanel, setOpenHintPanel] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
-  const [tableData, setTableData] = useState<Record<string, any[]>>({});
   const [markedComplete, setMarkedComplete] = useState(false);
   const [showAICoach, setShowAICoach] = useState(false);
   const [AISuggestion, setAISuggestion] = useState<string | null>(null);
   const [isLoadingAI, setIsLoadingAI] = useState(false);
 
-  // Pre-populate with user profile data
-  useEffect(() => {
-    if (profile) {
-      const metaSection = template.sections.find(s => s.id === 'document-meta');
-      if (metaSection && !formState['document-meta']) {
-        let metaContent = `| Document Owner | ${profile.name} |
-| Company | ${profile.company} |
-| Role | ${profile.role} |
-| Status | Draft |
-| Version | 1.0 |`;
-        setFormState(prev => ({ ...prev, 'document-meta': metaContent }));
+  if (!template) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-serif font-bold mb-4">Section Not Found</h1>
+          <p className="text-gray-500 mb-4">The mastery section you're looking for doesn't exist.</p>
+          <button
+            onClick={() => router.push('/mastery-lab')}
+            className="px-6 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-800"
+          >
+            Back to Mastery Lab
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const visibleSections = template.sections.filter((s: TemplateSection) => !hiddenSections.has(s.id));
+  const completionPercentage = Math.round(
+    (visibleSections.filter((s: TemplateSection) => {
+      if (s.fieldType === 'checkbox') {
+        const sectionCheckboxes = checkboxState[s.id] || {};
+        return Object.values(sectionCheckboxes).some(v => v);
       }
-    }
-  }, [profile, template.sections]);
+      return formState[s.id]?.trim() || tableData[s.id]?.some((row: any[]) => row.some(cell => cell));
+    }).length / visibleSections.length) * 100
+  );
 
-  const handleChange = useCallback((sectionId: string, value: any) => {
-    setFormState((prev) => ({ ...prev, [sectionId]: value }));
-  }, []);
-
-  const handleTableChange = useCallback((sectionId: string, rows: any[]) => {
+  const handleTableChange = (sectionId: string, rows: any[]) => {
     setTableData((prev) => ({ ...prev, [sectionId]: rows }));
-    const section = template.sections.find(s => s.id === sectionId);
+    const section = template.sections.find((s: TemplateSection) => s.id === sectionId);
     if (section?.tableSchema) {
       const headers = section.tableSchema.columns;
       let markdown = `| ${headers.join(' | ')} |\n| ${headers.map(() => '---').join(' | ')} |\n`;
-      rows.forEach(row => {
+      rows.forEach((row: any[]) => {
         markdown += `| ${row.map((cell: any) => cell || '').join(' | ')} |\n`;
       });
       setFormState((prev) => ({ ...prev, [sectionId]: markdown }));
     }
-  }, [template.sections]);
+  };
 
-  const toggleSectionVisibility = useCallback((sectionId: string) => {
+  const handleCheckboxChange = (sectionId: string, optionValue: string, checked: boolean) => {
+    setCheckboxState((prev) => ({
+      ...prev,
+      [sectionId]: {
+        ...(prev[sectionId] || {}),
+        [optionValue]: checked,
+      },
+    }));
+  };
+
+  const toggleSectionVisibility = (sectionId: string) => {
     setHiddenSections((prev) => {
       const next = new Set(prev);
       if (next.has(sectionId)) {
@@ -92,9 +147,9 @@ export default function TemplateWorkspace({ template, onBack }: TemplateWorkspac
       }
       return next;
     });
-  }, []);
+  };
 
-  const toggleSectionCollapse = useCallback((sectionId: string) => {
+  const toggleSectionCollapse = (sectionId: string) => {
     setCollapsedSections((prev) => {
       const next = new Set(prev);
       if (next.has(sectionId)) {
@@ -104,15 +159,9 @@ export default function TemplateWorkspace({ template, onBack }: TemplateWorkspac
       }
       return next;
     });
-  }, []);
+  };
 
-  const getLearnContent = useCallback((sectionId: string): LearnContent | undefined => {
-    const section = template.sections.find((s) => s.id === sectionId);
-    if (!section?.learnContentId) return undefined;
-    return learnContent.find((lc) => lc.id === section.learnContentId);
-  }, [template.sections]);
-
-  const getAISuggestion = useCallback(async () => {
+  const getAISuggestion = async () => {
     setIsLoadingAI(true);
     setAISuggestion(null);
     try {
@@ -120,7 +169,7 @@ export default function TemplateWorkspace({ template, onBack }: TemplateWorkspac
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          sectionId: template.id,
+          sectionId,
           completedSections: [],
           userResponses: formState,
         }),
@@ -134,10 +183,10 @@ export default function TemplateWorkspace({ template, onBack }: TemplateWorkspac
     } finally {
       setIsLoadingAI(false);
     }
-  }, [template.id, formState]);
+  };
 
-  const handleExport = useCallback((format: string) => {
-    const content = generateMarkdown(template, formState);
+  const handleExport = (format: string) => {
+    const content = generateMarkdown();
 
     switch (format) {
       case "markdown":
@@ -155,7 +204,7 @@ export default function TemplateWorkspace({ template, onBack }: TemplateWorkspac
         break;
       case "pdf":
         {
-          const printContent = generatePDFContent(template, formState);
+          const printContent = generatePDFContent();
           const printWindow = window.open("", "_blank", "width=1200,height=800");
           if (printWindow) {
             printWindow.document.write(printContent);
@@ -168,48 +217,100 @@ export default function TemplateWorkspace({ template, onBack }: TemplateWorkspac
         }
         break;
       case "docx":
-        {
-          navigator.clipboard.writeText(content).then(() => {
-            alert("Content copied to clipboard! Paste into Word and save as .docx");
-          }).catch(() => {
-            const textarea = document.createElement("textarea");
-            textarea.value = content;
-            document.body.appendChild(textarea);
-            textarea.select();
-            document.execCommand("copy");
-            document.body.removeChild(textarea);
-            alert("Content copied to clipboard! Paste into Word and save as .docx");
-          });
-        }
-        break;
       case "google-docs":
-        {
-          navigator.clipboard.writeText(content).then(() => {
-            window.open("https://docs.google.com/document/create", "_blank");
-            setTimeout(() => {
-              alert("Content copied to clipboard! Paste into your Google Doc (Ctrl/Cmd+V)");
-            }, 1000);
-          });
-        }
-        break;
       case "notion":
         {
           navigator.clipboard.writeText(content).then(() => {
-            window.open("https://www.notion.so", "_blank");
+            const targetUrl = format === 'google-docs'
+              ? 'https://docs.google.com/document/create'
+              : format === 'notion'
+              ? 'https://www.notion.so'
+              : null;
+            if (targetUrl) window.open(targetUrl, "_blank");
             setTimeout(() => {
-              alert("Content copied to clipboard! Paste into Notion (Ctrl/Cmd+Shift+V for plain text)");
+              alert("Content copied to clipboard! Paste into your destination and save.");
             }, 1000);
           });
         }
         break;
     }
     setShowExportMenu(false);
-  }, [template, formState]);
+  };
 
-  const visibleSections = template.sections.filter((s) => !hiddenSections.has(s.id));
-  const completionPercentage = Math.round(
-    (visibleSections.filter((s) => formState[s.id]?.trim() || tableData[s.id]?.some(row => row.some((cell: any) => cell))).length / visibleSections.length) * 100
-  );
+  const generateMarkdown = () => {
+    let content = `# ${template.name}\n\n`;
+    content += `**${template.description}**\n\n`;
+    content += `*Estimated Completion Time: ${template.estimatedCompletionTime}*\n\n`;
+    content += `---\n\n`;
+
+    template.sections.forEach((section: TemplateSection) => {
+      if (!hiddenSections.has(section.id)) {
+        content += `## ${section.title}\n\n`;
+        if (section.description) {
+          content += `${section.description}\n\n`;
+        }
+
+        if (section.fieldType === 'table' && tableData[section.id]) {
+          const headers = section.tableSchema?.columns || [];
+          if (headers.length > 0) {
+            content += `| ${headers.join(' | ')} |\n`;
+            content += `| ${headers.map(() => '---').join(' | ')} |\n`;
+            tableData[section.id].forEach((row: any[]) => {
+              content += `| ${row.map((cell: any) => cell || '').join(' | ')} |\n`;
+            });
+          }
+        } else if (section.fieldType === 'checkbox' && checkboxState[section.id]) {
+          section.options?.forEach((opt: { value: string; label: string }) => {
+            const checked = checkboxState[section.id]?.[opt.value];
+            content += `- [${checked ? 'x' : ' '}] ${opt.label}\n`;
+          });
+        } else if (formState[section.id]) {
+          content += `${formState[section.id]}\n\n`;
+        }
+        content += `\n`;
+      }
+    });
+
+    if (markedComplete) {
+      content += `---\n\n`;
+      content += `**Completed:** ${new Date().toLocaleDateString()}\n`;
+    }
+
+    return content;
+  };
+
+  const generatePDFContent = () => {
+    const markdown = generateMarkdown();
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>${template.name}</title>
+          <style>
+            body { font-family: Georgia, serif; padding: 40px; max-width: 800px; margin: 0 auto; }
+            h1 { font-size: 24px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+            h2 { font-size: 18px; margin-top: 30px; }
+            table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+            th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+            th { background: #f5f5f5; font-weight: 600; }
+            ul { list-style: none; padding: 0; }
+            li { padding: 8px 0; }
+          </style>
+        </head>
+        <body>
+          <h1>${template.name}</h1>
+          <p><em>${template.description}</em></p>
+          ${markdown.split('\n').map(line => {
+            if (line.startsWith('## ')) return `<h2>${line.replace('## ', '')}</h2>`;
+            if (line.startsWith('|')) return line; // Tables handled separately
+            if (line.startsWith('- [')) return `<li>${line.replace(/- \[[ x]\] /g, '')}</li>`;
+            if (line.trim() === '') return '<br/>';
+            return `<p>${line}</p>`;
+          }).join('')}
+        </body>
+      </html>
+    `;
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -219,11 +320,11 @@ export default function TemplateWorkspace({ template, onBack }: TemplateWorkspac
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
               <button
-                onClick={onBack}
+                onClick={() => router.push('/mastery-lab')}
                 className="flex items-center gap-2 text-sm text-gray-500 hover:text-black transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
-                Back
+                Back to Mastery Lab
               </button>
               <div className="h-6 w-px bg-gray-200" />
               <div>
@@ -346,25 +447,45 @@ export default function TemplateWorkspace({ template, onBack }: TemplateWorkspac
         </div>
       </header>
 
+      {/* Info Bar */}
+      <div className="bg-gray-50 border-b border-gray-100">
+        <div className="container mx-auto px-6 py-3">
+          <div className="flex items-center gap-6 text-sm text-gray-600">
+            <span className="flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              {template.estimatedCompletionTime}
+            </span>
+            <span className="flex items-center gap-2">
+              <Brain className="w-4 h-4" />
+              {template.sections.length} sections
+            </span>
+            <span className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Category: {template.category}
+            </span>
+          </div>
+        </div>
+      </div>
+
       <div className="container mx-auto px-6 py-8">
         <div className="flex gap-6">
-          {/* Main Content - Full Width */}
+          {/* Main Content */}
           <div className="flex-1">
-            {/* Template Sections */}
             <div className="space-y-4">
-              {template.sections.map((section, index) => (
+              {template.sections.map((section: TemplateSection, index: number) => (
                 <CollapsibleSection
                   key={section.id}
                   section={section}
                   index={index}
                   value={formState[section.id] || ""}
                   tableData={tableData[section.id] || []}
+                  checkboxState={checkboxState[section.id] || {}}
                   isHidden={hiddenSections.has(section.id)}
                   isCollapsed={collapsedSections.has(section.id)}
-                  hasHintContent={!!section.learnContentId}
-                  userProfile={profile}
-                  onChange={(value) => handleChange(section.id, value)}
+                  hasHintContent={!!section.helpText}
+                  onChange={(value) => setFormState((prev) => ({ ...prev, [section.id]: value }))}
                   onTableChange={(rows) => handleTableChange(section.id, rows)}
+                  onCheckboxChange={(optionValue, checked) => handleCheckboxChange(section.id, optionValue, checked)}
                   onToggleVisibility={() => toggleSectionVisibility(section.id)}
                   onToggleCollapse={() => toggleSectionCollapse(section.id)}
                   onOpenHint={() => setOpenHintPanel(openHintPanel === section.id ? null : section.id)}
@@ -376,24 +497,11 @@ export default function TemplateWorkspace({ template, onBack }: TemplateWorkspac
           {/* Hint Panel */}
           {openHintPanel && (
             <HintPanel
-              content={getLearnContent(openHintPanel)}
-              section={template.sections.find((s) => s.id === openHintPanel)}
+              section={template.sections.find((s: TemplateSection) => s.id === openHintPanel)}
               onClose={() => setOpenHintPanel(null)}
               onInsert={(text) => {
-                const textarea = document.querySelector('textarea:focus') as HTMLTextAreaElement;
-                if (textarea) {
-                  const start = textarea.selectionStart;
-                  const end = textarea.selectionEnd;
-                  const currentValue = formState[openHintPanel] || '';
-                  const updated = currentValue.slice(0, start) + text + currentValue.slice(end);
-                  handleChange(openHintPanel, updated);
-                  setTimeout(() => {
-                    textarea.focus();
-                    textarea.selectionStart = textarea.selectionEnd = start + text.length;
-                  }, 0);
-                } else {
-                  handleChange(openHintPanel, (formState[openHintPanel] || '') + text + '\n');
-                }
+                const currentValue = formState[openHintPanel] || '';
+                setFormState((prev) => ({ ...prev, [openHintPanel]: currentValue + text }));
               }}
             />
           )}
@@ -413,39 +521,15 @@ export default function TemplateWorkspace({ template, onBack }: TemplateWorkspac
       {/* Preview Modal */}
       {showPreview && (
         <PreviewModal
-          content={generateMarkdown(template, formState)}
+          content={generateMarkdown()}
           onClose={() => setShowPreview(false)}
         />
-      )}
-
-      {/* Completion Footer */}
-      {markedComplete && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-full shadow-lg z-50 animate-scale-in">
-          <div className="flex items-center gap-3">
-            <CheckCircle className="w-5 h-5" />
-            <span className="font-medium">Template completed on {new Date().toLocaleDateString()}</span>
-          </div>
-        </div>
       )}
     </div>
   );
 }
 
-// ============================================
-// EXPORT OPTION
-// ============================================
-
-function ExportOption({
-  icon,
-  label,
-  description,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  description: string;
-  onClick: () => void;
-}) {
+function ExportOption({ icon, label, description, onClick }: { icon: any; label: string; description: string; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
@@ -462,21 +546,18 @@ function ExportOption({
   );
 }
 
-// ============================================
-// COLLAPSIBLE SECTION - Full Width
-// ============================================
-
 interface CollapsibleSectionProps {
-  section: any;
+  section: TemplateSection;
   index: number;
   value: string;
   tableData: any[];
+  checkboxState: { [key: string]: boolean };
   isHidden: boolean;
   isCollapsed: boolean;
   hasHintContent: boolean;
-  userProfile: any;
   onChange: (value: string) => void;
   onTableChange: (rows: any[]) => void;
+  onCheckboxChange: (optionValue: string, checked: boolean) => void;
   onToggleVisibility: () => void;
   onToggleCollapse: () => void;
   onOpenHint: () => void;
@@ -487,12 +568,13 @@ function CollapsibleSection({
   index,
   value,
   tableData,
+  checkboxState,
   isHidden,
   isCollapsed,
   hasHintContent,
-  userProfile,
   onChange,
   onTableChange,
+  onCheckboxChange,
   onToggleVisibility,
   onToggleCollapse,
   onOpenHint,
@@ -516,7 +598,7 @@ function CollapsibleSection({
     );
   }
 
-  const isCompleted = value?.trim() || tableData?.some(row => row.some((cell: any) => cell));
+  const isCompleted = value?.trim() || tableData?.some((row: any[]) => row.some(cell => cell)) || Object.values(checkboxState).some(v => v);
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden transition-all hover:border-gray-300">
@@ -528,9 +610,7 @@ function CollapsibleSection({
         <div className="flex items-center gap-4">
           <span
             className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-              isCompleted
-                ? "bg-black text-white"
-                : "bg-gray-200 text-gray-600"
+              isCompleted ? "bg-black text-white" : "bg-gray-200 text-gray-600"
             }`}
           >
             {isCompleted ? "✓" : index + 1}
@@ -574,7 +654,7 @@ function CollapsibleSection({
         </div>
       </div>
 
-      {/* Section Content - Full Width */}
+      {/* Section Content */}
       {!isCollapsed && (
         <div className="px-6 py-5">
           {/* Help Text */}
@@ -593,24 +673,44 @@ function CollapsibleSection({
             />
           )}
 
+          {/* Checkbox Field Type */}
+          {section.fieldType === 'checkbox' && section.options && (
+            <div className="space-y-3">
+              {section.options.map((option) => (
+                <label
+                  key={option.value}
+                  className="flex items-start gap-3 p-3 border border-gray-200 rounded-md hover:border-gray-300 transition-colors cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={checkboxState[option.value] || false}
+                    onChange={(e) => onCheckboxChange(option.value, e.target.checked)}
+                    className="mt-1 w-4 h-4 text-black border-gray-300 rounded focus:ring-black"
+                  />
+                  <span className="text-sm text-gray-700">{option.label}</span>
+                </label>
+              ))}
+            </div>
+          )}
+
           {/* Markdown Field Type */}
           {section.fieldType === 'markdown' && (
             <textarea
               value={value}
               onChange={(e) => onChange(e.target.value)}
-              placeholder="Start writing... Use '/' for commands"
+              placeholder={section.placeholder || "Start writing..."}
               className="w-full min-h-[200px] p-4 bg-white border border-gray-200 rounded-md font-body text-sm focus:outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100 transition-all resize-y"
-              style={{ fontFamily: "var(--font-body)" }}
             />
           )}
 
-          {/* Structured Field Type */}
-          {section.fieldType === 'structured' && section.structuredFields && (
-            <StructuredFields
-              fields={section.structuredFields}
+          {/* Textarea Field Type */}
+          {section.fieldType === 'textarea' && (
+            <textarea
               value={value}
-              onChange={onChange}
-              userProfile={userProfile}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder={section.placeholder || "Enter your response..."}
+              rows={6}
+              className="w-full p-4 bg-white border border-gray-200 rounded-md font-body text-sm focus:outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100 transition-all resize-y"
             />
           )}
         </div>
@@ -619,16 +719,12 @@ function CollapsibleSection({
   );
 }
 
-// ============================================
-// NOTION-LIKE TABLE - Full Width
-// ============================================
-
 function NotionTable({
   schema,
   data,
   onChange,
 }: {
-  schema: { columns: string[]; rows?: any[] };
+  schema: TableSchema;
   data: any[];
   onChange: (rows: any[]) => void;
 }) {
@@ -726,98 +822,8 @@ function NotionTable({
   );
 }
 
-// ============================================
-// STRUCTURED FIELDS
-// ============================================
-
-function StructuredFields({
-  fields,
-  value,
-  onChange,
-  userProfile,
-}: {
-  fields: { key: string; label: string; placeholder: string }[];
-  value: string;
-  onChange: (value: string) => void;
-  userProfile: any;
-}) {
-  const [localFields, setLocalFields] = useState<Record<string, string>>({});
-
-  const updateField = (key: string, fieldValue: string) => {
-    const newFields = { ...localFields, [key]: fieldValue };
-    setLocalFields(newFields);
-
-    let combined = '';
-    fields.forEach(f => {
-      if (newFields[f.key]) {
-        combined += `### ${f.label}\n${newFields[f.key]}\n\n`;
-      }
-    });
-    onChange(combined.trim());
-  };
-
-  return (
-    <div className="space-y-4 my-2">
-      {fields.map((field) => (
-        <div
-          key={field.key}
-          className="p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
-        >
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-            {field.label}
-          </label>
-          <textarea
-            value={localFields[field.key] || ''}
-            onChange={(e) => updateField(field.key, e.target.value)}
-            placeholder={field.placeholder}
-            rows={3}
-            className="w-full bg-transparent outline-none text-sm font-body resize-none placeholder:text-gray-300"
-          />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ============================================
-// HINT PANEL
-// ============================================
-
-interface HintPanelProps {
-  content: LearnContent | undefined;
-  section: any;
-  onClose: () => void;
-  onInsert: (text: string) => void;
-}
-
-function HintPanel({ content, section, onClose, onInsert }: HintPanelProps) {
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const getExamples = () => {
-    const examples: Record<string, string[]> = {
-      'document-meta': [
-        '| Document Owner | Your Name |',
-        '| Status | Draft |',
-      ],
-      'problem-statement': [
-        '### Current State\nUsers are frustrated with...',
-        '### Evidence\n40% drop-off rate in analytics...',
-      ],
-      'success-metrics': [
-        '| Metric | Baseline | Target | Timeline |',
-        '| Activation Rate | 45% | 65% | 6 weeks |',
-      ],
-      'functional-requirements': [
-        '| ID | Requirement | Priority |',
-        '| FR-001 | User can login | P0 |',
-      ],
-    };
-    return examples[section?.id] || [];
-  };
-
-  const examples = getExamples();
-
-  if (!content) {
+function HintPanel({ section, onClose, onInsert }: { section: TemplateSection | undefined; onClose: () => void; onInsert: (text: string) => void }) {
+  if (!section) {
     return (
       <div className="fixed right-6 top-20 w-96 bg-white border border-gray-200 rounded-lg shadow-xl p-5 z-50 animate-slide-in">
         <div className="flex items-center justify-between mb-4">
@@ -833,102 +839,34 @@ function HintPanel({ content, section, onClose, onInsert }: HintPanelProps) {
 
   return (
     <div className="fixed right-6 top-20 w-96 max-h-[calc(100vh-5rem)] overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-xl z-50 animate-slide-in">
-      {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-lg">
         <div className="flex items-center gap-2">
           <Lightbulb className="w-5 h-5 text-amber-600" />
-          <h3 className="font-semibold text-sm">{content.title}</h3>
+          <h3 className="font-semibold text-sm">Guidance</h3>
         </div>
         <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
           <X className="w-4 h-4 text-gray-400" />
         </button>
       </div>
 
-      {/* Search */}
-      <div className="px-5 py-4 border-b border-gray-100">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search guidance..."
-            className="w-full pl-10 pr-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:border-gray-300"
-          />
-        </div>
-      </div>
-
-      {/* Content */}
       <div className="px-5 py-4">
-        <span className="inline-block px-2.5 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full mb-4">
-          {content.category}
-        </span>
+        {section.helpText && (
+          <div className="mb-4 p-3 bg-amber-50 border-l-2 border-amber-400 rounded-r-md">
+            <p className="text-sm text-amber-800">{section.helpText}</p>
+          </div>
+        )}
 
-        <div className="prose prose-sm max-w-none">
-          {content.content
-            .split('\n')
-            .filter(line => !searchQuery || line.toLowerCase().includes(searchQuery.toLowerCase()))
-            .map((paragraph, i) => {
-              if (paragraph.startsWith('## ')) {
-                return (
-                  <h4 key={i} className="font-heading font-semibold text-sm mt-4 mb-2">
-                    {paragraph.replace('## ', '')}
-                  </h4>
-                );
-              }
-              if (paragraph.startsWith('### ')) {
-                return (
-                  <h5 key={i} className="font-medium text-xs text-gray-700 mt-3 mb-1.5">
-                    {paragraph.replace('### ', '')}
-                  </h5>
-                );
-              }
-              if (paragraph.startsWith('- ') || paragraph.startsWith('✅ ') || paragraph.startsWith('❌ ')) {
-                return (
-                  <li key={i} className="text-sm text-gray-700 ml-4">
-                    {paragraph}
-                  </li>
-                );
-              }
-              if (paragraph.startsWith('> ')) {
-                return (
-                  <blockquote
-                    key={i}
-                    className="border-l-2 border-gray-200 pl-4 my-3 text-sm text-gray-600 italic"
-                  >
-                    {paragraph.replace('> ', '')}
-                  </blockquote>
-                );
-              }
-              if (paragraph.trim() === '') return null;
-              return (
-                <p key={i} className="text-sm text-gray-700 mb-2">
-                  {paragraph}
-                </p>
-              );
-            })}
-        </div>
-
-        {/* Quick Insert */}
-        {examples.length > 0 && (
-          <div className="mt-6 pt-6 border-t border-gray-100">
-            <h4 className="font-medium text-xs text-gray-500 mb-3">Quick Insert</h4>
-            <div className="space-y-2">
-              {examples.map((example, i) => (
-                <button
-                  key={i}
-                  onClick={() => onInsert(example)}
-                  className="w-full text-left px-3 py-2.5 text-xs bg-gray-50 hover:bg-gray-100 rounded-md transition-colors"
-                >
-                  {example}
-                </button>
-              ))}
+        {section.placeholder && (
+          <div className="mb-4">
+            <h4 className="font-medium text-xs text-gray-500 mb-2">Example Format:</h4>
+            <div className="p-3 bg-gray-50 rounded-md text-sm text-gray-600 font-mono">
+              {section.placeholder}
             </div>
           </div>
         )}
 
         {/* Insert Elements */}
-        <div className="mt-6 pt-6 border-t border-gray-100">
+        <div className="mt-4 pt-4 border-t border-gray-100">
           <h4 className="font-medium text-xs text-gray-500 mb-3">Insert Element</h4>
           <div className="flex flex-wrap gap-2">
             <button
@@ -961,28 +899,12 @@ function HintPanel({ content, section, onClose, onInsert }: HintPanelProps) {
             </button>
           </div>
         </div>
-
-        {/* Read Time */}
-        <div className="mt-6 pt-6 border-t border-gray-100">
-          <p className="text-xs text-gray-400">
-            📚 {content.readTime} min read · Based on PM best practices
-          </p>
-        </div>
       </div>
     </div>
   );
 }
 
-// ============================================
-// PREVIEW MODAL
-// ============================================
-
-interface PreviewModalProps {
-  content: string;
-  onClose: () => void;
-}
-
-function PreviewModal({ content, onClose }: PreviewModalProps) {
+function PreviewModal({ content, onClose }: { content: string; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-8">
       <div className="absolute inset-0 bg-black/50 backdrop-sm" onClick={onClose} />
@@ -1019,18 +941,7 @@ function PreviewModal({ content, onClose }: PreviewModalProps) {
   );
 }
 
-// ============================================
-// AI COACH PANEL
-// ============================================
-
-interface AICoachPanelProps {
-  suggestion: string | null;
-  isLoading: boolean;
-  onClose: () => void;
-  onRegenerate: () => void;
-}
-
-function AICoachPanel({ suggestion, isLoading, onClose, onRegenerate }: AICoachPanelProps) {
+function AICoachPanel({ suggestion, isLoading, onClose, onRegenerate }: { suggestion: string | null; isLoading: boolean; onClose: () => void; onRegenerate: () => void }) {
   return (
     <div className="fixed right-6 top-20 w-96 max-h-[calc(100vh-5rem)] overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-xl z-50 animate-slide-in">
       <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-lg">
@@ -1069,7 +980,7 @@ function AICoachPanel({ suggestion, isLoading, onClose, onRegenerate }: AICoachP
             </div>
             <div className="pt-4 border-t border-gray-100">
               <p className="text-xs text-gray-500 mb-3">
-                The AI Coach analyzes your responses and provides personalized feedback based on PM best practices.
+                The AI Coach analyzes your responses and provides personalized guidance based on PM best practices.
               </p>
               <button
                 onClick={onRegenerate}
@@ -1083,7 +994,7 @@ function AICoachPanel({ suggestion, isLoading, onClose, onRegenerate }: AICoachP
         ) : (
           <div className="text-center py-8">
             <Sparkles className="w-12 h-12 mx-auto mb-3 text-purple-300" />
-            <p className="text-sm text-gray-600 mb-4">Get personalized coaching on your PM work</p>
+            <p className="text-sm text-gray-600 mb-4">Get personalized coaching on your PM skills</p>
             <button
               onClick={onRegenerate}
               className="px-6 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 transition-colors"

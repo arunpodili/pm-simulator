@@ -17,6 +17,7 @@ import {
   Plus,
   Command,
   X,
+  Brain,
 } from "lucide-react";
 
 interface NavItem {
@@ -67,6 +68,18 @@ const navItems: NavItem[] = [
       { label: "Framework Library", href: "/frameworks" },
       { label: "Persona Templates", href: "/personas" },
       { label: "Documentation", href: "/docs" },
+    ],
+  },
+  {
+    label: "Mastery Lab",
+    icon: <Brain className="w-4 h-4" />,
+    children: [
+      { label: "All Sections", href: "/mastery-lab" },
+      { label: "Product Mindset", href: "/mastery-lab/mastery-section-1" },
+      { label: "Creativity & Innovation", href: "/mastery-lab/mastery-section-2" },
+      { label: "Critical Thinking", href: "/mastery-lab/mastery-section-3" },
+      { label: "Stakeholder Management", href: "/mastery-lab/mastery-section-4" },
+      { label: "Core Competencies", href: "/mastery-lab/mastery-section-5" },
     ],
   },
 ];

@@ -65,42 +65,46 @@ export const prdFeatureLaunchTemplate: Template = {
       id: 'executive-summary',
       title: 'Executive Summary',
       description: '30-second overview',
-      fieldType: 'structured',
+      fieldType: 'markdown',
       required: true,
       helpText: 'What any executive will read',
       learnContentId: 'executive-communication',
-      structuredFields: [
-        { key: 'feature', label: 'Feature', placeholder: 'What we are building' },
-        { key: 'users', label: 'Users', placeholder: 'Who this is for' },
-        { key: 'action', label: 'Action', placeholder: 'What they can do' },
-        { key: 'benefit', label: 'Benefit', placeholder: 'Expected outcome' },
-      ]
+      placeholder: `**Feature:** [What we are building]
+**Users:** [Who this is for]
+**Action:** [What they can do]
+**Benefit:** [Expected outcome]`,
     },
     {
       id: 'tl-dr',
       title: 'TL;DR',
       description: '5 bullets max',
-      fieldType: 'bullets',
+      fieldType: 'markdown',
       required: true,
       helpText: 'Be brutally concise',
       learnContentId: 'executive-communication',
-      bulletItems: ['WHAT:', 'WHO:', 'WHY:', 'IMPACT:', 'WHEN:']
+      placeholder: `- WHAT: [What is this feature]
+- WHO: [Who is it for]
+- WHY: [Why are we building it]
+- IMPACT: [Expected impact]
+- WHEN: [Target timeline]`,
     },
     {
       id: 'problem-statement',
       title: 'Problem Statement',
       description: 'Define the problem clearly',
-      fieldType: 'structured',
+      fieldType: 'markdown',
       required: true,
       helpText: 'A well-defined problem is half-solved',
       learnContentId: 'problem-definition',
-      structuredFields: [
-        { key: 'current-state', label: 'Current State', placeholder: 'Describe the current situation' },
-        { key: 'affected-users', label: 'Affected Users', placeholder: 'Who experiences this?' },
-        { key: 'frequency', label: 'Frequency', placeholder: 'How often does this occur?' },
-        { key: 'severity', label: 'Severity', placeholder: 'What is the impact?' },
-        { key: 'evidence', label: 'Evidence', placeholder: 'Data or research validating this' },
-      ]
+      placeholder: `**Current State:** [Describe the current situation]
+
+**Affected Users:** [Who experiences this?]
+
+**Frequency:** [How often does this occur?]
+
+**Severity:** [What is the impact?]
+
+**Evidence:** [Data or research validating this]`,
     },
     {
       id: 'user-personas',
@@ -119,15 +123,15 @@ export const prdFeatureLaunchTemplate: Template = {
       id: 'jtbd',
       title: 'Jobs To Be Done',
       description: 'Frame the user need',
-      fieldType: 'structured',
+      fieldType: 'markdown',
       required: true,
       helpText: 'Focus on outcome, not solution',
       learnContentId: 'jtbd-framework',
-      structuredFields: [
-        { key: 'situation', label: 'When...', placeholder: 'Situation or context' },
-        { key: 'motivation', label: 'I want to...', placeholder: 'Motivation or action' },
-        { key: 'outcome', label: 'So I can...', placeholder: 'Expected benefit' },
-      ]
+      placeholder: `**When...** [Situation or context]
+
+**I want to...** [Motivation or action]
+
+**So I can...** [Expected benefit]`,
     },
     {
       id: 'success-metrics',

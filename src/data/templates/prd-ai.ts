@@ -4,7 +4,7 @@ export const prdAITemplate: Template = {
   id: 'prd-ai-feature-launch',
   name: 'AI/ML Feature Launch PRD (Comprehensive)',
   description: 'Complete product requirements document for AI/ML features with model requirements, ethical AI, and responsible deployment',
-  industryId: 'ai-ml',
+  industryId: 'ai_ml',
   scenarioId: 'feature-launch',
   frameworkIds: ['rice', 'jtbd', 'okrs'],
   outputFormat: 'markdown',
