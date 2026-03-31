@@ -1,4 +1,8 @@
-﻿  node_modules/
-  .next/
-  *.log
-  *.tsbuildinfo
+﻿node_modules/
+.next/
+*.log
+*.tsbuildinfo
+.env
+.env.local
+.env.*.local
+.env.production
