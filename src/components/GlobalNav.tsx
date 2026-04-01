@@ -18,6 +18,7 @@ import {
   Command,
   X,
   Brain,
+  Cpu,
 } from "lucide-react";
 
 interface NavItem {
@@ -39,6 +40,11 @@ const navItems: NavItem[] = [
       { label: "Roadmap Planning", href: "/simulator?template=roadmap" },
       { label: "Pricing Change", href: "/simulator?template=pricing" },
     ],
+  },
+  {
+    label: "User Simulation",
+    icon: <Cpu className="w-4 h-4" />,
+    href: "/simulator/user-simulation",
   },
   {
     label: "Case Studies",

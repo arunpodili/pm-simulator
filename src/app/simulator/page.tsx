@@ -15,7 +15,8 @@ import { stakeholderManagementTemplate } from "@/data/templates/framework-stakeh
 import { coreCompetenciesTemplate } from "@/data/templates/framework-core-competencies";
 import { domainVerticalsTemplate } from "@/data/templates/framework-domain-verticals";
 import { IndustryId, ScenarioId, Template, TemplateCategory } from "@/types";
-import { ChevronRight, Lightbulb, Brain, Target, Zap, Award } from "lucide-react";
+import { ChevronRight, Lightbulb, Brain, Target, Zap, Award, Cpu } from "lucide-react";
+import Link from "next/link";
 import TemplateWorkspace from "@/components/TemplateWorkspace";
 import GlobalNav from "@/components/GlobalNav";
 
@@ -103,6 +104,30 @@ export default function SimulatorPage() {
                 </div>
               </div>
             </div>
+
+            {/* User Simulation Banner */}
+            <Link
+              href="/simulator/user-simulation"
+              className="block bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-6 mb-8 text-white hover:shadow-lg transition-shadow"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                    <Cpu className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">User Simulation Playground 🚀</h3>
+                    <p className="text-indigo-100">
+                      Test your product with 1,000+ simulated users before launch. Powered by MiroFish multi-agent technology.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 font-medium">
+                  Try it now
+                  <ChevronRight className="w-5 h-5" />
+                </div>
+              </div>
+            </Link>
 
             {/* PRD Templates Section */}
             <h2 className="text-2xl font-serif font-semibold mb-6 flex items-center gap-2">

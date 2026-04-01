@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, FileText, Lightbulb, Users, Zap } from "lucide-react";
+import { ArrowRight, FileText, Lightbulb, Users, Zap, Cpu } from "lucide-react";
 
 export default function Home() {
   return (
@@ -18,6 +18,9 @@ export default function Home() {
           <div className="flex items-center gap-6">
             <Link href="/simulator" className="text-sm text-gray-600 hover:text-black">
               Simulator
+            </Link>
+            <Link href="/simulator/user-simulation" className="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+              User Simulation
             </Link>
             <Link href="/case-studies" className="text-sm text-gray-600 hover:text-black">
               Case Studies
@@ -82,7 +85,7 @@ export default function Home() {
               Everything You Need to Practice PM
             </h2>
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             <FeatureCard
               icon={<FileText className="w-8 h-8" />}
               title="Comprehensive Templates"
@@ -97,6 +100,13 @@ export default function Home() {
               icon={<Users className="w-8 h-8" />}
               title="Community"
               description="Share work, learn from real projects, get answers."
+            />
+            <FeatureCard
+              icon={<Cpu className="w-8 h-8" />}
+              title="User Simulation"
+              description="Test your product with 1,000+ simulated users before launch."
+              href="/simulator/user-simulation"
+              highlight
             />
           </div>
         </div>
@@ -130,15 +140,46 @@ export default function Home() {
   );
 }
 
-function FeatureCard({ icon, title, description }: { icon: any; title: string; description: string }) {
+function FeatureCard({
+  icon,
+  title,
+  description,
+  href,
+  highlight,
+}: {
+  icon: any;
+  title: string;
+  description: string;
+  href?: string;
+  highlight?: boolean;
+}) {
+  const CardWrapper = href ? Link : "div";
+
   return (
-    <div className="p-8 bg-white border border-gray-100 rounded-xl">
-      <div className="w-14 h-14 bg-gray-100 rounded-lg flex items-center justify-center mb-6">
+    <CardWrapper
+      href={href || "#"}
+      className={`p-8 border rounded-xl transition-all cursor-pointer ${
+        highlight
+          ? "bg-gradient-to-br from-indigo-50 to-white border-indigo-200 hover:border-indigo-300 hover:shadow-lg"
+          : "bg-white border-gray-100 hover:border-black hover:shadow-lg"
+      }`}
+    >
+      <div
+        className={`w-14 h-14 rounded-lg flex items-center justify-center mb-6 ${
+          highlight ? "bg-indigo-100 text-indigo-600" : "bg-gray-100"
+        }`}
+      >
         {icon}
       </div>
       <h3 className="text-xl font-serif font-semibold mb-3">{title}</h3>
       <p className="text-gray-600">{description}</p>
-    </div>
+      {highlight && (
+        <div className="mt-4 flex items-center gap-2 text-indigo-600 font-medium text-sm">
+          Try it now
+          <ArrowRight className="w-4 h-4" />
+        </div>
+      )}
+    </CardWrapper>
   );
 }
 

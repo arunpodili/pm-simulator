@@ -1,14 +1,20 @@
 """
 AI Agents Service - Bridge between PM Simulator and AI Agents System
+Includes MiroFish-inspired User Simulation Engine
 """
 
 import os
 import sys
 import json
+import threading
 from pathlib import Path
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
+
+# Import simulation components
+from simulation.simulation_engine import SimulationEngine
+from simulation.models import SimulationConfig
 
 # Load environment variables
 load_dotenv()
@@ -175,6 +181,11 @@ class MockAgent:
 # Global service instance
 ai_service = AIAgentsService()
 
+# Simulation storage
+active_simulations = {}
+simulation_results = {}
+simulation_engine = SimulationEngine()
+
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
@@ -301,9 +312,261 @@ def architect_review():
     return jsonify(result)
 
 
+# ============================================================================
+# USER SIMULATION API ENDPOINTS (MiroFish Integration)
+# ============================================================================
+
+@app.route('/api/simulation/health', methods=['GET'])
+def simulation_health():
+    """Health check for simulation service"""
+    return jsonify({
+        'status': 'healthy',
+        'active_simulations': len(active_simulations),
+        'completed_simulations': len(simulation_results)
+    })
+
+
+@app.route('/api/simulation/create', methods=['POST'])
+def create_simulation():
+    """Create a new user simulation"""
+    data = request.json
+
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    # Build simulation config
+    config = SimulationConfig(
+        name=data.get('name', 'Untitled Simulation'),
+        feature_description=data.get('feature_description', ''),
+        target_industry=data.get('target_industry', 'saas'),
+        persona_count=data.get('persona_count', 1000),
+        simulation_days=data.get('simulation_days', 90),
+        random_seed=data.get('random_seed'),
+        features=data.get('features', []),
+        pricing_tiers=data.get('pricing_tiers', []),
+        pain_points_solved=data.get('pain_points_solved', []),
+        differentiators=data.get('differentiators', []),
+        market_saturation=data.get('market_saturation', 0.5),
+        competitor_strength=data.get('competitor_strength', 0.5),
+        marketing_spend_level=data.get('marketing_spend_level', 'medium')
+    )
+
+    # Create simulation ID
+    import uuid
+    sim_id = str(uuid.uuid4())[:8]
+
+    # Store config
+    active_simulations[sim_id] = {
+        'config': config,
+        'status': 'pending',
+        'progress': 0,
+        'created_at': datetime.now().isoformat()
+    }
+
+    return jsonify({
+        'success': True,
+        'simulation_id': sim_id,
+        'status': 'pending',
+        'config': {
+            'name': config.name,
+            'persona_count': config.persona_count,
+            'simulation_days': config.simulation_days
+        }
+    })
+
+
+@app.route('/api/simulation/<sim_id>/run', methods=['POST'])
+def run_simulation(sim_id):
+    """Run the simulation (can be async)"""
+    if sim_id not in active_simulations:
+        return jsonify({'error': 'Simulation not found'}), 404
+
+    sim_data = active_simulations[sim_id]
+    config = sim_data['config']
+
+    # Update status
+    sim_data['status'] = 'running'
+
+    try:
+        # Run simulation
+        result = simulation_engine.run_simulation(config)
+
+        # Store results
+        simulation_results[sim_id] = result
+        sim_data['status'] = 'completed'
+        sim_data['progress'] = 100
+
+        return jsonify({
+            'success': True,
+            'simulation_id': sim_id,
+            'status': 'completed',
+            'summary': {
+                'total_personas': result.final_metrics.get('total_personas', 0),
+                'conversion_rate': result.final_metrics.get('conversion_rate', 0),
+                'churn_rate': result.predicted_churn_rate,
+                'nps': result.predicted_nps,
+                'predicted_clv': result.predicted_clv
+            }
+        })
+
+    except Exception as e:
+        sim_data['status'] = 'failed'
+        sim_data['error'] = str(e)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/simulation/<sim_id>/status', methods=['GET'])
+def get_simulation_status(sim_id):
+    """Get simulation status and progress"""
+    if sim_id not in active_simulations:
+        return jsonify({'error': 'Simulation not found'}), 404
+
+    sim_data = active_simulations[sim_id]
+
+    return jsonify({
+        'simulation_id': sim_id,
+        'status': sim_data['status'],
+        'progress': sim_data.get('progress', 0),
+        'created_at': sim_data['created_at']
+    })
+
+
+@app.route('/api/simulation/<sim_id>/results', methods=['GET'])
+def get_simulation_results(sim_id):
+    """Get full simulation results"""
+    if sim_id not in simulation_results:
+        if sim_id in active_simulations:
+            return jsonify({
+                'simulation_id': sim_id,
+                'status': active_simulations[sim_id]['status'],
+                'message': 'Simulation still running'
+            })
+        return jsonify({'error': 'Simulation results not found'}), 404
+
+    result = simulation_results[sim_id]
+
+    return jsonify({
+        'simulation_id': sim_id,
+        'config': {
+            'name': result.config.name,
+            'target_industry': result.config.target_industry,
+            'persona_count': result.config.persona_count,
+            'simulation_days': result.config.simulation_days
+        },
+        'final_metrics': result.final_metrics,
+        'predictions': {
+            'churn_rate': result.predicted_churn_rate,
+            'nps': result.predicted_nps,
+            'clv': result.predicted_clv
+        },
+        'adoption_curve': result.predicted_adoption_curve,
+        'cohort_analysis': result.cohort_analysis,
+        'timeline_sample': result.timeline[:30] if len(result.timeline) > 30 else result.timeline
+    })
+
+
+@app.route('/api/simulation/<sim_id>/agents', methods=['GET'])
+def get_simulation_agents(sim_id):
+    """Get all agents in the simulation"""
+    if sim_id not in simulation_results:
+        return jsonify({'error': 'Simulation results not found'}), 404
+
+    result = simulation_results[sim_id]
+
+    agents_data = []
+    for agent in result.personas[:100]:  # Limit to first 100 for performance
+        agents_data.append(agent.to_dict())
+
+    return jsonify({
+        'simulation_id': sim_id,
+        'total_agents': len(result.personas),
+        'returned_agents': len(agents_data),
+        'agents': agents_data
+    })
+
+
+@app.route('/api/simulation/<sim_id>/agent/<agent_id>/journey', methods=['GET'])
+def get_agent_journey(sim_id, agent_id):
+    """Get journey for a specific agent"""
+    if sim_id not in simulation_results:
+        return jsonify({'error': 'Simulation results not found'}), 404
+
+    journey = simulation_engine.get_agent_journey(agent_id)
+
+    return jsonify({
+        'simulation_id': sim_id,
+        'agent_id': agent_id,
+        'journey': journey
+    })
+
+
+@app.route('/api/simulation/templates', methods=['GET'])
+def get_simulation_templates():
+    """Get simulation configuration templates"""
+    return jsonify({
+        'templates': [
+            {
+                'id': 'saas_launch',
+                'name': 'SaaS Product Launch',
+                'description': 'Simulate launch of a new SaaS feature',
+                'default_config': {
+                    'persona_count': 1000,
+                    'simulation_days': 90,
+                    'market_saturation': 0.3,
+                    'marketing_spend_level': 'medium'
+                }
+            },
+            {
+                'id': 'mobile_app',
+                'name': 'Mobile App Release',
+                'description': 'Simulate mobile app user acquisition',
+                'default_config': {
+                    'persona_count': 5000,
+                    'simulation_days': 60,
+                    'market_saturation': 0.5,
+                    'marketing_spend_level': 'high'
+                }
+            },
+            {
+                'id': 'enterprise_feature',
+                'name': 'Enterprise Feature Rollout',
+                'description': 'Simulate enterprise feature adoption',
+                'default_config': {
+                    'persona_count': 500,
+                    'simulation_days': 180,
+                    'market_saturation': 0.7,
+                    'marketing_spend_level': 'low'
+                }
+            }
+        ]
+    })
+
+
+@app.route('/api/simulation/list', methods=['GET'])
+def list_simulations():
+    """List all simulations"""
+    simulations = []
+
+    for sim_id, sim_data in active_simulations.items():
+        simulations.append({
+            'id': sim_id,
+            'name': sim_data['config'].name,
+            'status': sim_data['status'],
+            'created_at': sim_data['created_at']
+        })
+
+    return jsonify({
+        'simulations': simulations,
+        'total': len(simulations)
+    })
+
+
+from datetime import datetime
+
 if __name__ == '__main__':
     port = int(os.getenv('AI_SERVICE_PORT', 5001))
     print(f"Starting AI Agents Service on port {port}")
     print(f"AI Agents Path: {AI_AGENTS_PATH}")
     print(f"Project Root: {PROJECT_ROOT}")
+    print(f"User Simulation Engine: Loaded")
     app.run(host='0.0.0.0', port=port, debug=True)

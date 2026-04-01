@@ -29,7 +29,9 @@ import {
   CheckCircle,
   Wand2,
   MessageSquare,
+  Cpu,
 } from "lucide-react";
+import Link from "next/link";
 
 interface TemplateWorkspaceProps {
   template: Template;
@@ -261,6 +263,21 @@ export default function TemplateWorkspace({ template, onBack }: TemplateWorkspac
                 <Sparkles className="w-4 h-4" />
                 AI Coach
               </button>
+
+              {/* Simulate Users */}
+              <Link
+                href={{
+                  pathname: "/simulator/user-simulation",
+                  query: {
+                    prd_template: template.id,
+                    prd_name: template.name,
+                  },
+                }}
+                className="flex items-center gap-2 px-3 py-2 text-sm text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
+              >
+                <Cpu className="w-4 h-4" />
+                Simulate Users
+              </Link>
 
               {/* Mark Complete */}
               <button
