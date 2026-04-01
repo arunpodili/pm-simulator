@@ -108,14 +108,10 @@ class SimulationConfig:
     persona_count: int = 1000
     simulation_days: int = 90
     random_seed: Optional[int] = None
-
-    # Feature attributes extracted from PRD
     features: List[str] = field(default_factory=list)
     pricing_tiers: List[Dict[str, Any]] = field(default_factory=list)
     pain_points_solved: List[str] = field(default_factory=list)
     differentiators: List[str] = field(default_factory=list)
-
-    # Market conditions
     market_saturation: float = 0.5  # 0-1
     competitor_strength: float = 0.5  # 0-1
     marketing_spend_level: str = "medium"  # low, medium, high
@@ -131,12 +127,10 @@ class SimulationResult:
     final_metrics: Dict[str, Any]
     cohort_analysis: Dict[str, Any]
     generated_at: datetime = field(default_factory=datetime.now)
-
-    # Key predictions
-    predicted_adoption_curve: List[float]
-    predicted_churn_rate: float
-    predicted_nps: float
-    predicted_clv: float
+    predicted_adoption_curve: List[float] = field(default_factory=list)
+    predicted_churn_rate: float = 0.0
+    predicted_nps: float = 0.0
+    predicted_clv: float = 0.0
 
 
 @dataclass

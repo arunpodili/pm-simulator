@@ -6,3 +6,19 @@
 .env.local
 .env.*.local
 .env.production
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+ai-agents-service/agent-memory/
+ai-agents-service/agent-output/
+venv/
+env/
+
+# AI/Agent runtime files
+*.db
+*.sqlite
+redis-dump-*

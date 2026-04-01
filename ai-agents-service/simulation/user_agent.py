@@ -71,7 +71,7 @@ class UserAgent:
             AdoptionArchetype.EARLY_ADOPTER: 0.10,
             AdoptionArchetype.EARLY_MAJORITY: 0.05,
             AdoptionArchetype.LATE_MAJORITY: 0.02,
-            AdoptionArchetype.LAGGERD: 0.01,
+            AdoptionArchetype.LAGGARD: 0.01,
         }.get(self.persona.behavioral.archetype, 0.05)
 
         # Adjust for marketing
@@ -111,7 +111,7 @@ class UserAgent:
             AdoptionArchetype.EARLY_ADOPTER: 0.6,
             AdoptionArchetype.EARLY_MAJORITY: 0.4,
             AdoptionArchetype.LATE_MAJORITY: 0.2,
-            AdoptionArchetype.LAGGERD: 0.1,
+            AdoptionArchetype.LAGGARD: 0.1,
         }.get(self.persona.behavioral.archetype, 0.4)
 
         # Friction factors

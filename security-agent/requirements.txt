@@ -1,0 +1,24 @@
+# Security AI Agent - Dependencies
+# Core Flask API
+flask==3.0.0
+flask-cors==4.0.0
+
+# Security Scanning
+bandit>=1.7.0         # Python security scanner
+safety>=2.3.0         # Python dependency vulnerabilities
+regex>=2023.0.0       # Advanced pattern matching
+
+# Code Analysis
+astroid>=3.0.0        # Python AST parsing
+semgrep>=1.50.0       # Universal code scanner
+
+# File Watching
+watchdog>=3.0.0       # File system monitoring
+
+# Telegram
+requests>=2.31.0      # HTTP client for Telegram API
+
+# Utilities
+python-dotenv>=1.0.0  # Environment variables
+pyyaml>=6.0.0         # Config parsing
+colorama>=0.4.6       # Colored console output

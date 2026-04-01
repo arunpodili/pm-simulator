@@ -22,7 +22,7 @@ class PersonaGenerator:
         AdoptionArchetype.EARLY_ADOPTER: 0.135,
         AdoptionArchetype.EARLY_MAJORITY: 0.34,
         AdoptionArchetype.LATE_MAJORITY: 0.34,
-        AdoptionArchetype.LAGGERD: 0.16,
+        AdoptionArchetype.LAGGARD: 0.16,
     }
 
     # Industry-specific persona seeds
@@ -135,16 +135,16 @@ class PersonaGenerator:
         remaining = total
 
         for archetype, proportion in self.ARCHETYPE_DISTRIBUTION.items():
-            if archetype == AdoptionArchetype.LAGGERD:  # Handle the typo in enum
+            if archetype == AdoptionArchetype.LAGGARD:  # Handle the typo in enum
                 continue
             count = int(total * proportion)
             counts[archetype] = count
             remaining -= count
 
         # Handle the laggard archetype (fixing the typo)
-        if AdoptionArchetype.LAGGERD in counts:
-            del counts[AdoptionArchetype.LAGGERD]
-        counts[AdoptionArchetype.LAGGERD] = remaining
+        if AdoptionArchetype.LAGGARD in counts:
+            del counts[AdoptionArchetype.LAGGARD]
+        counts[AdoptionArchetype.LAGGARD] = remaining
 
         return counts
 
@@ -256,7 +256,7 @@ class PersonaGenerator:
 
         traits = {
             'hyper_skeptic': {
-                'archetype': AdoptionArchetype.LAGGERD,
+                'archetype': AdoptionArchetype.LAGGARD,
                 'pain_level': 2,
                 'tech_savviness': 4,
                 'price_sensitivity': 9,
@@ -350,7 +350,7 @@ class PersonaGenerator:
                 'decision_style': 'cautious',
                 'pain_tolerance': 4,
             },
-            AdoptionArchetype.LAGGERD: {
+            AdoptionArchetype.LAGGARD: {
                 'price_sensitivity': random.randint(8, 10),
                 'decision_style': 'cautious',
                 'pain_tolerance': 3,

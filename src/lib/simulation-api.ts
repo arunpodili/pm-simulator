@@ -1,6 +1,6 @@
-"""
-API client for the User Simulation service
-"""
+/**
+ * API client for the User Simulation service
+ */
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || "http://localhost:5001";
 

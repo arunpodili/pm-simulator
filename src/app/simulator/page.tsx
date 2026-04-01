@@ -15,7 +15,7 @@ import { stakeholderManagementTemplate } from "@/data/templates/framework-stakeh
 import { coreCompetenciesTemplate } from "@/data/templates/framework-core-competencies";
 import { domainVerticalsTemplate } from "@/data/templates/framework-domain-verticals";
 import { IndustryId, ScenarioId, Template, TemplateCategory } from "@/types";
-import { ChevronRight, Lightbulb, Brain, Target, Zap, Award, Cpu } from "lucide-react";
+import { ChevronRight, Lightbulb, Brain, Target, Zap, Award, Cpu, Sparkles } from "lucide-react";
 import Link from "next/link";
 import TemplateWorkspace from "@/components/TemplateWorkspace";
 import GlobalNav from "@/components/GlobalNav";
@@ -104,6 +104,30 @@ export default function SimulatorPage() {
                 </div>
               </div>
             </div>
+
+            {/* LLM Simulation Banner */}
+            <Link
+              href="/simulator/llm-simulation"
+              className="block bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl p-6 mb-8 text-white hover:shadow-lg transition-shadow"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                    <Sparkles className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">LLM Agent Simulation ✨ NEW</h3>
+                    <p className="text-purple-100">
+                      Stress-test your idea with 50 AI agents that debate like humans. Get qualitative insights in 15 min.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 font-medium">
+                  Try it now
+                  <ChevronRight className="w-5 h-5" />
+                </div>
+              </div>
+            </Link>
 
             {/* User Simulation Banner */}
             <Link
