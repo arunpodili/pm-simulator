@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PM Simulator - Interactive Architecture</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        #container {
+            display: flex;
+            height: 100vh;
+        }
+
+        #graph-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #sidebar {
+            width: 400px;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.2);
+            padding: 25px;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+        }
+
+        #sidebar.collapsed {
+            transform: translateX(100%);
+        }
+
+        h1 {
+            color: #1e3c72;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .node-info {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .node-info h2 {
+            color: #2a5298;
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .node-info .type-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+        }
+
+        .type-badge.input { background: #28a745; color: white; }
+        .type-badge.router { background: #ffc107; color: #333; }
+        .type-badge.mode { background: #17a2b8; color: white; }
+        .type-badge.step { background: #6c757d; color: white; }
+        .type-badge.output { background: #dc3545; color: white; }
+        .type-badge.support { background: #6f42c1; color: white; }
+
+        .description {
+            color: #333;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .details-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .details-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+            color: #555;
+            font-size: 14px;
+        }
+
+        .details-list li:last-child {
+            border-bottom: none;
+        }
+
+        .details-list li:before {
+            content: "▸ ";
+            color: #2a5298;
+            font-weight: bold;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .metric {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .metric-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2a5298;
+        }
+
+        .metric-label {
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+        }
+
+        #controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+        }
+
+        .control-btn {
+            display: block;
+            width: 100%;
+            padding: 10px 20px;
+            margin: 5px 0;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .control-btn.primary {
+            background: #2a5298;
+            color: white;
+        }
+
+        .control-btn.secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .control-btn.success {
+            background: #28a745;
+            color: white;
+        }
+
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+        }
+
+        .legend h3 {
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+            font-size: 13px;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            margin-right: 8px;
+        }
+
+        .tooltip {
+            position: absolute;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            border-radius: 6px;
+            pointer-events: none;
+            font-size: 13px;
+            max-width: 250px;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+
+        .empty-state h3 {
+            color: #2a5298;
+            margin-bottom: 10px;
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .node {
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .node:hover {
+            filter: brightness(1.2);
+        }
+
+        .node circle {
+            stroke: white;
+            stroke-width: 3px;
+            transition: all 0.3s;
+        }
+
+        .node.selected circle {
+            stroke: #ffd700;
+            stroke-width: 5px;
+            filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.8));
+        }
+
+        .link {
+            stroke: rgba(255, 255, 255, 0.4);
+            stroke-width: 2px;
+            fill: none;
+        }
+
+        .link-label {
+            font-size: 11px;
+            fill: rgba(255, 255, 255, 0.8);
+            text-anchor: middle;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .node-label {
+            font-size: 12px;
+            fill: white;
+            text-anchor: middle;
+            font-weight: 600;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+            pointer-events: none;
+        }
+
+        .particle {
+            fill: #ffd700;
+            filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.8));
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .simulating {
+            animation: pulse 1s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="graph-container">
+            <div id="controls">
+                <h3 style="margin-bottom: 10px; color: #333;">Controls</h3>
+                <button class="control-btn primary" onclick="playSimulation()">▶ Play Simulation</button>
+                <button class="control-btn secondary" onclick="resetView()">⟲ Reset View</button>
+                <button class="control-btn success" onclick="showComparison()">📊 Compare Modes</button>
+            </div>
+
+            <div class="legend">
+                <h3>Node Types</h3>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #28a745;"></div>
+                    <span>Input</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ffc107;"></div>
+                    <span>Router</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #17a2b8;"></div>
+                    <span>Simulation Mode</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #6c757d;"></div>
+                    <span>Process Step</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #dc3545;"></div>
+                    <span>Output</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #6f42c1;"></div>
+                    <span>Support Component</span>
+                </div>
+            </div>
+
+            <svg id="graph"></svg>
+            <div class="tooltip" id="tooltip"></div>
+        </div>
+
+        <div id="sidebar">
+            <h1>PM Simulator</h1>
+            <p class="subtitle">Interactive Architecture Explorer</p>
+
+            <div id="node-details">
+                <div class="empty-state">
+                    <h3>👋 Welcome!</h3>
+                    <p>Click on any node in the graph to explore how the PM Simulator works.</p>
+                    <p style="margin-top: 20px;"><strong>Quick Start:</strong></p>
+                    <ul style="text-align: left; margin-top: 10px; padding-left: 20px;">
+                        <li>Drag nodes to rearrange</li>
+                        <li>Scroll to zoom in/out</li>
+                        <li>Click "Play Simulation" to see data flow</li>
+                        <li>Compare different modes</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Color scheme
+        const colors = {
+            input: '#28a745',
+            router: '#ffc107',
+            mode: '#17a2b8',
+            step: '#6c757d',
+            output: '#dc3545',
+            support: '#6f42c1'
+        };
+
+        // Node sizes
+        const sizes = {
+            input: 35,
+            router: 40,
+            mode: 45,
+            step: 30,
+            output: 40,
+            support: 25
+        };
+
+        let svg, simulation, nodes, links, g, zoom;
+        let selectedNode = null;
+        let isSimulating = false;
+
+        // Initialize
+        async function init() {
+            const response = await fetch('/api/data');
+            const data = await response.json();
+
+            nodes = data.nodes;
+            links = data.links;
+
+            setupSVG();
+            setupSimulation();
+            render();
+        }
+
+        function setupSVG() {
+            const container = document.getElementById('graph-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            svg = d3.select('#graph')
+                .attr('width', width)
+                .attr('height', height);
+
+            // Clear any existing content
+            svg.selectAll('*').remove();
+
+            // Add zoom behavior
+            zoom = d3.zoom()
+                .scaleExtent([0.3, 3])
+                .on('zoom', (event) => {
+                    g.attr('transform', event.transform);
+                });
+
+            svg.call(zoom);
+
+            // Create main group
+            g = svg.append('g');
+
+            // Arrow markers for directed edges
+            svg.append('defs').selectAll('marker')
+                .data(['end'])
+                .enter().append('marker')
+                .attr('id', 'arrow')
+                .attr('viewBox', '0 -5 10 10')
+                .attr('refX', 25)
+                .attr('refY', 0)
+                .attr('markerWidth', 6)
+                .attr('markerHeight', 6)
+                .attr('orient', 'auto')
+                .append('path')
+                .attr('d', 'M0,-5L10,0L0,5')
+                .attr('fill', 'rgba(255, 255, 255, 0.6)');
+        }
+
+        function setupSimulation() {
+            const container = document.getElementById('graph-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            simulation = d3.forceSimulation(nodes)
+                .force('link', d3.forceLink(links).id(d => d.id).distance(120))
+                .force('charge', d3.forceManyBody().strength(-800))
+                .force('center', d3.forceCenter(width / 2, height / 2))
+                .force('collision', d3.forceCollide().radius(d => sizes[d.type] + 20));
+        }
+
+        function render() {
+            // Draw links
+            const link = g.append('g')
+                .attr('class', 'links')
+                .selectAll('line')
+                .data(links)
+                .enter().append('line')
+                .attr('class', 'link')
+                .attr('marker-end', 'url(#arrow)');
+
+            // Draw link labels
+            const linkLabels = g.append('g')
+                .attr('class', 'link-labels')
+                .selectAll('text')
+                .data(links)
+                .enter().append('text')
+                .attr('class', 'link-label')
+                .text(d => d.label)
+                .attr('dy', -5);
+
+            // Draw nodes
+            const node = g.append('g')
+                .attr('class', 'nodes')
+                .selectAll('g')
+                .data(nodes)
+                .enter().append('g')
+                .attr('class', 'node')
+                .call(d3.drag()
+                    .on('start', dragstarted)
+                    .on('drag', dragged)
+                    .on('end', dragended));
+
+            // Node circles
+            node.append('circle')
+                .attr('r', d => sizes[d.type])
+                .attr('fill', d => colors[d.type])
+                .attr('fill-opacity', 0.9);
+
+            // Node icons (emoji based on type)
+            node.append('text')
+                .attr('text-anchor', 'middle')
+                .attr('dy', '0.35em')
+                .attr('font-size', d => sizes[d.type] * 0.5)
+                .text(d => {
+                    const icons = {
+                        input: '📝',
+                        router: '🔀',
+                        mode: '⚙️',
+                        step: '⚡',
+                        output: '📊',
+                        support: '🔧'
+                    };
+                    return icons[d.type] || '●';
+                });
+
+            // Node labels
+            node.append('text')
+                .attr('class', 'node-label')
+                .attr('dy', d => sizes[d.type] + 18)
+                .text(d => d.label);
+
+            // Node interactions
+            node.on('click', (event, d) => {
+                event.stopPropagation();
+                selectNode(d);
+            });
+
+            node.on('mouseover', (event, d) => {
+                showTooltip(event, d);
+            });
+
+            node.on('mouseout', () => {
+                hideTooltip();
+            });
+
+            // Background click to deselect
+            svg.on('click', () => {
+                deselectNode();
+            });
+
+            // Update positions on simulation tick
+            simulation.on('tick', () => {
+                link
+                    .attr('x1', d => d.source.x)
+                    .attr('y1', d => d.source.y)
+                    .attr('x2', d => d.target.x)
+                    .attr('y2', d => d.target.y);
+
+                linkLabels
+                    .attr('x', d => (d.source.x + d.target.x) / 2)
+                    .attr('y', d => (d.source.y + d.target.y) / 2);
+
+                node.attr('transform', d => `translate(${d.x},${d.y})`);
+            });
+        }
+
+        function selectNode(d) {
+            // Remove previous selection
+            d3.selectAll('.node').classed('selected', false);
+
+            // Add selection to clicked node
+            d3.select(event.currentTarget).classed('selected', true);
+            selectedNode = d;
+
+            // Update sidebar
+            updateSidebar(d);
+        }
+
+        function deselectNode() {
+            d3.selectAll('.node').classed('selected', false);
+            selectedNode = null;
+            document.getElementById('node-details').innerHTML = `
+                <div class="empty-state">
+                    <h3>👋 Welcome!</h3>
+                    <p>Click on any node in the graph to explore how the PM Simulator works.</p>
+                </div>
+            `;
+        }
+
+        function updateSidebar(d) {
+            const sidebar = document.getElementById('node-details');
+
+            let metricsHtml = '';
+            if (d.metrics) {
+                metricsHtml = `
+                    <div class="metrics">
+                        <div class="metric">
+                            <div class="metric-value">${d.metrics.time}</div>
+                            <div class="metric-label">Time</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${d.metrics.personas}</div>
+                            <div class="metric-label">Personas</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${d.metrics.accuracy}</div>
+                            <div class="metric-label">Accuracy</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            let detailsHtml = '';
+            if (d.details) {
+                detailsHtml = `
+                    <h3 style="margin-top: 20px; margin-bottom: 10px; color: #333;">Key Details</h3>
+                    <ul class="details-list">
+                        ${d.details.map(detail => `<li>${detail}</li>`).join('')}
+                    </ul>
+                `;
+            }
+
+            sidebar.innerHTML = `
+                <div class="node-info">
+                    <span class="type-badge ${d.type}">${d.type}</span>
+                    <h2>${d.label}</h2>
+                    <p class="description">${d.description}</p>
+                    ${metricsHtml}
+                    ${detailsHtml}
+                </div>
+            `;
+        }
+
+        function showTooltip(event, d) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.innerHTML = `<strong>${d.label}</strong><br>${d.description.substring(0, 100)}...`;
+            tooltip.style.left = (event.pageX + 10) + 'px';
+            tooltip.style.top = (event.pageY - 30) + 'px';
+            tooltip.style.opacity = 1;
+        }
+
+        function hideTooltip() {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.style.opacity = 0;
+        }
+
+        // Drag functions
+        function dragstarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+
+        function dragended(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+
+        // Control functions
+        function playSimulation() {
+            if (isSimulating) return;
+            isSimulating = true;
+
+            // Create particles that flow through the system
+            const particle = g.append('circle')
+                .attr('class', 'particle')
+                .attr('r', 8)
+                .attr('cx', nodes[0].x)
+                .attr('cy', nodes[0].y);
+
+            // Animate through the flow
+            const path = [
+                nodes.find(n => n.id === 'user_input'),
+                nodes.find(n => n.id === 'router'),
+                nodes.find(n => n.id === 'rule_based'),
+                nodes.find(n => n.id === 'rule_step1'),
+                nodes.find(n => n.id === 'rule_step2'),
+                nodes.find(n => n.id === 'rule_step3'),
+                nodes.find(n => n.id === 'results')
+            ];
+
+            let currentIndex = 0;
+
+            function animateStep() {
+                if (currentIndex >= path.length - 1) {
+                    particle.remove();
+                    isSimulating = false;
+                    return;
+                }
+
+                const current = path[currentIndex];
+                const next = path[currentIndex + 1];
+
+                particle.transition()
+                    .duration(1000)
+                    .attr('cx', next.x)
+                    .attr('cy', next.y)
+                    .on('end', () => {
+                        currentIndex++;
+                        animateStep();
+                    });
+            }
+
+            animateStep();
+        }
+
+        function resetView() {
+            svg.transition()
+                .duration(750)
+                .call(zoom.transform, d3.zoomIdentity);
+        }
+
+        function showComparison() {
+            const sidebar = document.getElementById('node-details');
+            sidebar.innerHTML = `
+                <div class="node-info">
+                    <h2>📊 Mode Comparison</h2>
+                    <p class="description">Compare the three simulation modes to choose the right one for your needs.</p>
+
+                    <div style="margin-top: 20px;">
+                        <div style="background: #17a2b8; color: white; padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+                            <h3 style="margin-bottom: 8px;">Mock Mode</h3>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; font-size: 12px;">
+                                <div><strong>Speed:</strong> 2 seconds</div>
+                                <div><strong>Personas:</strong> 5</div>
+                                <div><strong>Cost:</strong> Free</div>
+                            </div>
+                            <p style="margin-top: 8px; font-size: 13px;">Best for: Quick idea iteration and testing</p>
+                        </div>
+
+                        <div style="background: #6c757d; color: white; padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+                            <h3 style="margin-bottom: 8px;">Rule-Based</h3>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; font-size: 12px;">
+                                <div><strong>Speed:</strong> 5 minutes</div>
+                                <div><strong>Personas:</strong> 1000</div>
+                                <div><strong>Cost:</strong> Free</div>
+                            </div>
+                            <p style="margin-top: 8px; font-size: 13px;">Best for: Market sizing and conversion predictions</p>
+                        </div>
+
+                        <div style="background: #6f42c1; color: white; padding: 15px; border-radius: 8px;">
+                            <h3 style="margin-bottom: 8px;">LLM Debate</h3>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; font-size: 12px;">
+                                <div><strong>Speed:</strong> 15 minutes</div>
+                                <div><strong>Personas:</strong> 50</div>
+                                <div><strong>Cost:</strong> $0.50-2</div>
+                            </div>
+                            <p style="margin-top: 8px; font-size: 13px;">Best for: Deep insights and feature refinement</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            const container = document.getElementById('graph-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            svg.attr('width', width).attr('height', height);
+            simulation.force('center', d3.forceCenter(width / 2, height / 2));
+            simulation.alpha(0.3).restart();
+        });
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>

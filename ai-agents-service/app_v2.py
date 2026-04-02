@@ -1,0 +1,504 @@
+"""
+AI Agents Service v2.0 - Production-Ready PM Simulator
+With Streaming, Field Mapping, Async Jobs, and Validation
+"""
+
+import os
+import sys
+from datetime import datetime
+from flask import Flask, request, jsonify, Response, stream_with_context
+from flask_cors import CORS
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Import simulation components
+from simulation.simulation_engine import SimulationEngine
+from simulation.models import SimulationConfig
+from simulation.llm_simulation_engine import LLMSimulationEngine, HybridSimulationEngine
+
+# Import new modules
+from streaming import init_streaming, streaming_bp
+from field_mapper import map_user_brief
+from validation import validate_simulation_results
+
+# Import Celery tasks (optional - if Redis is available)
+try:
+    from tasks import run_simulation_task, get_task_info, revoke_task
+    CELERY_AVAILABLE = True
+except ImportError:
+    CELERY_AVAILABLE = False
+    print("Warning: Celery not available. Running in synchronous mode.")
+
+app = Flask(__name__)
+CORS(app)
+
+# Initialize streaming module
+init_streaming(app, SimulationEngine(), {})
+app.register_blueprint(streaming_bp)
+
+# Simulation storage
+active_simulations = {}
+simulation_results = {}
+simulation_engine = SimulationEngine()
+llm_simulation_engine = LLMSimulationEngine()
+hybrid_simulation_engine = HybridSimulationEngine()
+
+# ============================================================================
+# HEALTH & INFO ENDPOINTS
+# ============================================================================
+
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """Comprehensive health check"""
+    return jsonify({
+        'status': 'healthy',
+        'version': '2.0.0',
+        'features': {
+            'streaming': True,
+            'field_mapping': True,
+            'validation': True,
+            'async_tasks': CELERY_AVAILABLE,
+            'llm_router': True
+        },
+        'active_simulations': len(active_simulations),
+        'completed_simulations': len(simulation_results)
+    })
+
+
+# ============================================================================
+# FIELD MAPPING ENDPOINTS
+# ============================================================================
+
+@app.route('/api/simulation/map-fields', methods=['POST'])
+def map_fields():
+    """
+    Map user input fields to simulation parameters.
+
+    Request Body:
+        {
+            "problem": "string",
+            "target_user": "string",
+            "pricing": "string",
+            "competitors": "string",
+            "success_metric": "string",
+            "additional_context": "string"
+        }
+
+    Returns:
+        Mapped configuration with confidence scores
+    """
+    data = request.json
+
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    try:
+        mapped_config = map_user_brief(data)
+
+        return jsonify({
+            'success': True,
+            'mapped_config': mapped_config,
+            'overall_confidence': round(
+                sum([
+                    mapped_config['pain_severity']['confidence'],
+                    mapped_config['market_size']['confidence'],
+                    mapped_config['price_sensitivity']['confidence'],
+                    mapped_config['viral_potential']['confidence'],
+                    mapped_config['competitive_pressure']['confidence'],
+                    mapped_config['tech_adoption_speed']['confidence']
+                ]) / 6 * 100, 1
+            )
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/simulation/presets', methods=['POST'])
+def get_presets():
+    """
+    Get simulation presets based on field mapping.
+
+    Returns optimal persona count, simulation days, and marketing spend
+    based on the mapped configuration.
+    """
+    data = request.json
+
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    try:
+        mapped = map_user_brief(data)
+
+        # Calculate presets based on mapping
+        market_size = mapped['market_size']['value']
+        pain_severity = mapped['pain_severity']['value']
+        competition = mapped['competitive_pressure']['value']
+
+        # Market size multipliers
+        multipliers = {
+            'enterprise': 0.5,
+            'mid_market': 1.0,
+            'smb': 1.5,
+            'consumer': 2.0
+        }
+        multiplier = multipliers.get(market_size, 1.0)
+
+        # Base values
+        persona_count = int(1000 * multiplier)
+        simulation_days = 90
+        marketing_spend = 'medium'
+
+        # Adjust for pain severity
+        if pain_severity > 0.8:
+            simulation_days = 60
+            marketing_spend = 'high'
+        elif pain_severity < 0.4:
+            simulation_days = 120
+            marketing_spend = 'low'
+
+        # Adjust for competition
+        if competition > 0.7:
+            marketing_spend = 'high'
+
+        return jsonify({
+            'success': True,
+            'presets': {
+                'persona_count': persona_count,
+                'simulation_days': simulation_days,
+                'marketing_spend_level': marketing_spend
+            },
+            'reasoning': {
+                'market_size': f"{market_size} market detected",
+                'pain_severity': f"Pain level: {pain_severity:.2f}",
+                'competition': f"Competitive pressure: {competition:.2f}"
+            }
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ============================================================================
+# SIMULATION ENDPOINTS (Enhanced)
+# ============================================================================
+
+@app.route('/api/simulation/create', methods=['POST'])
+def create_simulation():
+    """Create a new simulation with enhanced validation"""
+    data = request.json
+
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    try:
+        # Build simulation config
+        config = SimulationConfig(
+            name=data.get('name', 'Untitled Simulation'),
+            feature_description=data.get('feature_description', ''),
+            target_industry=data.get('target_industry', 'saas'),
+            persona_count=data.get('persona_count', 1000),
+            simulation_days=data.get('simulation_days', 90),
+            random_seed=data.get('random_seed'),
+            features=data.get('features', []),
+            pricing_tiers=data.get('pricing_tiers', []),
+            pain_points_solved=data.get('pain_points_solved', []),
+            differentiators=data.get('differentiators', []),
+            market_saturation=data.get('market_saturation', 0.5),
+            competitor_strength=data.get('competitor_strength', 0.5),
+            marketing_spend_level=data.get('marketing_spend_level', 'medium')
+        )
+
+        # Create simulation ID
+        import uuid
+        sim_id = str(uuid.uuid4())[:8]
+
+        # Store config
+        active_simulations[sim_id] = {
+            'config': config,
+            'status': 'pending',
+            'progress': 0,
+            'created_at': datetime.now().isoformat(),
+            'has_streaming': True
+        }
+
+        return jsonify({
+            'success': True,
+            'simulation_id': sim_id,
+            'status': 'pending',
+            'streaming_available': True,
+            'config': {
+                'name': config.name,
+                'persona_count': config.persona_count,
+                'simulation_days': config.simulation_days
+            }
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/simulation/<sim_id>/run', methods=['POST'])
+def run_simulation(sim_id):
+    """Run simulation synchronously"""
+    if sim_id not in active_simulations:
+        return jsonify({'error': 'Simulation not found'}), 404
+
+    sim_data = active_simulations[sim_id]
+    config = sim_data['config']
+
+    sim_data['status'] = 'running'
+
+    try:
+        result = simulation_engine.run_simulation(config)
+        simulation_results[sim_id] = result
+        sim_data['status'] = 'completed'
+        sim_data['progress'] = 100
+
+        return jsonify({
+            'success': True,
+            'simulation_id': sim_id,
+            'status': 'completed',
+            'summary': {
+                'total_personas': result.final_metrics.get('total_personas', 0),
+                'conversion_rate': result.final_metrics.get('conversion_rate', 0),
+                'churn_rate': result.predicted_churn_rate,
+                'nps': result.predicted_nps,
+                'predicted_clv': result.predicted_clv
+            }
+        })
+
+    except Exception as e:
+        sim_data['status'] = 'failed'
+        sim_data['error'] = str(e)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/simulation/<sim_id>/run-async', methods=['POST'])
+def run_simulation_async(sim_id):
+    """
+    Run simulation asynchronously using Celery.
+
+    Returns immediately with task ID. Check status via /api/tasks/{task_id}/status
+    """
+    if not CELERY_AVAILABLE:
+        return jsonify({
+            'error': 'Async tasks not available. Use /api/simulation/{id}/run instead'
+        }), 503
+
+    if sim_id not in active_simulations:
+        return jsonify({'error': 'Simulation not found'}), 404
+
+    sim_data = active_simulations[sim_id]
+    config = sim_data['config']
+
+    try:
+        # Queue the task
+        task = run_simulation_task.delay(sim_id, config.__dict__)
+
+        sim_data['status'] = 'queued'
+        sim_data['task_id'] = task.id
+
+        return jsonify({
+            'success': True,
+            'simulation_id': sim_id,
+            'task_id': task.id,
+            'status': 'queued',
+            'message': 'Simulation queued. Check status via /api/tasks/{task_id}/status'
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ============================================================================
+# VALIDATION ENDPOINTS
+# ============================================================================
+
+@app.route('/api/simulation/<sim_id>/validate', methods=['POST'])
+def validate_simulation(sim_id):
+    """
+    Validate simulation results against industry benchmarks.
+
+    Returns confidence score and recommendations.
+    """
+    if sim_id not in simulation_results:
+        return jsonify({'error': 'Simulation results not found'}), 404
+
+    data = request.json or {}
+    industry = data.get('industry', 'saas')
+
+    try:
+        result = simulation_results[sim_id]
+
+        # Prepare results for validation
+        results_for_validation = {
+            'trial_to_paid': result.final_metrics.get('conversion_rate', 0),
+            'monthly_churn': result.predicted_churn_rate,
+            'nps': result.predicted_nps,
+            'conversion_rate': result.final_metrics.get('conversion_rate', 0),
+        }
+
+        validation = validate_simulation_results(results_for_validation, industry)
+
+        return jsonify({
+            'success': True,
+            'simulation_id': sim_id,
+            'validation': validation
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/validation/benchmarks', methods=['GET'])
+def get_benchmarks():
+    """Get available industry benchmarks"""
+    from validation import validator
+
+    return jsonify({
+        'industries': validator.get_available_industries(),
+        'benchmarks': {
+            industry: validator.get_industry_metrics(industry)
+            for industry in validator.get_available_industries()
+        }
+    })
+
+
+# ============================================================================
+# TASK MANAGEMENT ENDPOINTS (Celery)
+# ============================================================================
+
+@app.route('/api/tasks/<task_id>/status', methods=['GET'])
+def get_task_status_endpoint(task_id):
+    """Get async task status"""
+    if not CELERY_AVAILABLE:
+        return jsonify({'error': 'Celery not available'}), 503
+
+    try:
+        status = get_task_info(task_id)
+        if status:
+            return jsonify(status)
+        return jsonify({'error': 'Task not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/tasks/<task_id>/revoke', methods=['POST'])
+def revoke_task_endpoint(task_id):
+    """Cancel a running task"""
+    if not CELERY_AVAILABLE:
+        return jsonify({'error': 'Celery not available'}), 503
+
+    try:
+        revoked = revoke_task(task_id, terminate=True)
+        if revoked:
+            return jsonify({'success': True, 'message': 'Task revoked'})
+        return jsonify({'error': 'Task not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/tasks/queue', methods=['GET'])
+def get_queue_status():
+    """Get Celery queue statistics"""
+    if not CELERY_AVAILABLE:
+        return jsonify({'error': 'Celery not available'}), 503
+
+    try:
+        from tasks import get_queue_stats
+        stats = get_queue_stats()
+        return jsonify(stats)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ============================================================================
+# ORIGINAL ENDPOINTS (Compatibility)
+# ============================================================================
+
+@app.route('/api/simulation/health', methods=['GET'])
+def simulation_health():
+    """Legacy health endpoint"""
+    return jsonify({
+        'status': 'healthy',
+        'active_simulations': len(active_simulations),
+        'completed_simulations': len(simulation_results),
+        'version': '2.0.0'
+    })
+
+
+@app.route('/api/simulation/<sim_id>/status', methods=['GET'])
+def get_simulation_status(sim_id):
+    """Get simulation status"""
+    if sim_id not in active_simulations:
+        return jsonify({'error': 'Simulation not found'}), 404
+
+    sim_data = active_simulations[sim_id]
+
+    return jsonify({
+        'simulation_id': sim_id,
+        'status': sim_data['status'],
+        'progress': sim_data.get('progress', 0),
+        'created_at': sim_data['created_at'],
+        'streaming_available': sim_data.get('has_streaming', True)
+    })
+
+
+@app.route('/api/simulation/<sim_id>/results', methods=['GET'])
+def get_simulation_results(sim_id):
+    """Get simulation results"""
+    if sim_id not in simulation_results:
+        if sim_id in active_simulations:
+            return jsonify({
+                'simulation_id': sim_id,
+                'status': active_simulations[sim_id]['status'],
+                'message': 'Simulation still running'
+            })
+        return jsonify({'error': 'Simulation results not found'}), 404
+
+    result = simulation_results[sim_id]
+
+    return jsonify({
+        'simulation_id': sim_id,
+        'config': {
+            'name': result.config.name,
+            'target_industry': result.config.target_industry,
+            'persona_count': result.config.persona_count,
+            'simulation_days': result.config.simulation_days
+        },
+        'final_metrics': result.final_metrics,
+        'predictions': {
+            'churn_rate': result.predicted_churn_rate,
+            'nps': result.predicted_nps,
+            'clv': result.predicted_clv
+        },
+        'adoption_curve': result.predicted_adoption_curve,
+        'cohort_analysis': result.cohort_analysis,
+        'timeline_sample': result.timeline[:30] if len(result.timeline) > 30 else result.timeline
+    })
+
+
+# ============================================================================
+# MAIN
+# ============================================================================
+
+if __name__ == '__main__':
+    print("=" * 60)
+    print("PM Simulator v2.0 - Production Server")
+    print("=" * 60)
+    print(f"\nFeatures enabled:")
+    print(f"  - Streaming API: Yes")
+    print(f"  - Field Mapping: Yes")
+    print(f"  - Validation: Yes")
+    print(f"  - Async Tasks: {CELERY_AVAILABLE}")
+    print(f"\nEndpoints:")
+    print(f"  - Health:    http://localhost:5001/api/health")
+    print(f"  - Streaming: http://localhost:5001/api/simulation/{{id}}/stream")
+    print(f"  - Mapping:   http://localhost:5001/api/simulation/map-fields")
+    print(f"  - Validate:  http://localhost:5001/api/simulation/{{id}}/validate")
+    print("=" * 60)
+
+    app.run(host='0.0.0.0', port=5001, debug=True)
