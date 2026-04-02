@@ -21,6 +21,9 @@ import {
   Check,
 } from "lucide-react";
 import { AgentGraph } from "./AgentGraph";
+import { Agent3DGraph } from "./Agent3DGraph";
+import { AgentDetailPanel } from "./AgentDetailPanel";
+import { Cube } from "lucide-react";
 
 interface LLMSimulationResultsProps {
   data: any;
@@ -28,7 +31,8 @@ interface LLMSimulationResultsProps {
 }
 
 export function LLMSimulationResults({ data, onNewSimulation }: LLMSimulationResultsProps) {
-  const [activeTab, setActiveTab] = useState<"report" | "personas" | "debates" | "graph">("report");
+  const [activeTab, setActiveTab] = useState<"report" | "personas" | "debates" | "graph" | "3d-network">("report");
+  const [selectedAgent, setSelectedAgent] = useState<any>(null);
   const [expandedPersona, setExpandedPersona] = useState<string | null>(null);
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
 
@@ -196,6 +200,22 @@ export function LLMSimulationResults({ data, onNewSimulation }: LLMSimulationRes
           >
             Network Graph
             {activeTab === "graph" && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-600" />
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab("3d-network")}
+            className={`pb-4 font-medium transition-colors relative ${
+              activeTab === "3d-network"
+                ? "text-purple-600"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <div className="flex items-center gap-1">
+              <Cube className="w-4 h-4" />
+              3D Network
+            </div>
+            {activeTab === "3d-network" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-600" />
             )}
           </button>
@@ -534,6 +554,58 @@ export function LLMSimulationResults({ data, onNewSimulation }: LLMSimulationRes
             />
           </div>
         </div>
+      )}
+
+      {activeTab === "3d-network" && (
+        <div className="space-y-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <Cube className="w-5 h-5 text-purple-600" />
+                  3D Agent Network
+                </h2>
+                <p className="text-gray-600 mt-1">
+                  Explore how {data?.agent_reasoning?.length || 0} AI agents formed their opinions in 3D space.
+                  Rotate, zoom, and click agents to understand their reasoning.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 px-4 py-2 bg-purple-50 rounded-lg">
+                <Shield className="w-4 h-4 text-purple-600" />
+                <span className="text-sm font-medium text-purple-700">
+                  Transparent AI
+                </span>
+              </div>
+            </div>
+
+            <div className="rounded-xl overflow-hidden border border-gray-200">
+              <Agent3DGraph
+                agentReasoning={data?.agent_reasoning || []}
+                width={800}
+                height={550}
+                onAgentSelect={setSelectedAgent}
+              />
+            </div>
+
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <h4 className="font-medium text-gray-900 mb-2">Why this builds trust:</h4>
+              <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
+                <li>Each sphere represents an AI agent with unique reasoning</li>
+                <li>Green = Supporting, Red = Opposing, Gray = Neutral</li>
+                <li>Animated particles show information flow between agents</li>
+                <li>Click any agent to see their complete thought process</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Agent Detail Modal */}
+      {selectedAgent && (
+        <AgentDetailPanel
+          agent={selectedAgent}
+          onClose={() => setSelectedAgent(null)}
+        />
       )}
     </div>
   );

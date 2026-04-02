@@ -409,6 +409,83 @@ Be direct and actionable. Don't hedge."""
         # Generate report
         report = self._generate_fallback_report(brief, [debate_result])
 
+        # Generate agent reasoning for 3D visualization
+        agent_reasoning = []
+        agent_nodes = []
+        agent_links = []
+
+        # Create agents from personas with reasoning
+        for persona_idx, persona in enumerate(personas):
+            persona_name = persona.get('name', f'Persona {persona_idx}')
+            base_position = random.choice(['support', 'oppose', 'neutral'])
+
+            for variant_idx in range(5):  # 5 variants per persona
+                agent_id = f"{persona_name.lower().replace(' ', '_')}_{variant_idx}"
+
+                # Vary position slightly based on variant
+                position_rand = random.random()
+                if base_position == 'support':
+                    position = 'support' if position_rand > 0.3 else 'neutral'
+                elif base_position == 'oppose':
+                    position = 'oppose' if position_rand > 0.3 else 'neutral'
+                else:
+                    position = random.choice(['support', 'oppose', 'neutral'])
+
+                confidence = random.uniform(0.6, 0.95)
+
+                # Generate reasoning based on persona and position
+                if position == 'support':
+                    reasoning = f"As a {persona_name.lower()}, I see clear value. The solution addresses my daily pain points and the pricing aligns with the time savings."
+                elif position == 'oppose':
+                    reasoning = f"While I understand the appeal, my experience as a {persona_name.lower()} tells me the integration complexity and change management will be significant barriers."
+                else:
+                    reasoning = f"I see both pros and cons. The concept is promising but I need to see more data on user adoption and ROI before committing."
+
+                # Create debate rounds
+                debate_rounds = [
+                    {"round": 1, "argument": f"Initial reaction: {random.choice(['Intrigued', 'Skeptical', 'Curious'])}", "sentiment": random.choice(['positive', 'neutral', 'negative'])},
+                    {"round": 2, "argument": f"After hearing others: {random.choice(['More confident', 'More concerned', 'Still unsure'])}", "sentiment": random.choice(['positive', 'neutral', 'negative'])},
+                    {"round": 3, "argument": f"Final position: {reasoning[:50]}...", "sentiment": 'positive' if position == 'support' else 'negative' if position == 'oppose' else 'neutral'}
+                ]
+
+                agent_data = {
+                    "agent_id": agent_id,
+                    "persona": persona_name,
+                    "position": position,
+                    "confidence": confidence,
+                    "reasoning": reasoning,
+                    "influenced_by": [],
+                    "influenced": [],
+                    "debate_rounds": debate_rounds,
+                    "final_position": position
+                }
+
+                agent_reasoning.append(agent_data)
+                agent_nodes.append({
+                    "id": agent_id,
+                    "name": f"{persona_name} {variant_idx + 1}",
+                    "group": persona_idx,
+                    "position": position,
+                    "confidence": confidence
+                })
+
+        # Create influence network (random connections for mock)
+        for i, agent in enumerate(agent_reasoning):
+            # Each agent influenced by 1-3 other agents
+            num_influencers = random.randint(1, 3)
+            potential_influencers = [a for j, a in enumerate(agent_reasoning) if j != i]
+            influencers = random.sample(potential_influencers, min(num_influencers, len(potential_influencers)))
+
+            for influencer in influencers:
+                agent["influenced_by"].append(influencer["agent_id"])
+                influencer["influenced"].append(agent["agent_id"])
+
+                agent_links.append({
+                    "source": influencer["agent_id"],
+                    "target": agent["agent_id"],
+                    "value": random.uniform(0.3, 1.0)
+                })
+
         return {
             "simulation_id": f"mock_{int(time.time())}",
             "brief": brief,
@@ -416,12 +493,18 @@ Be direct and actionable. Don't hedge."""
             "personas": personas,
             "debate_topics": ["Should I build this?"],
             "debate_results": [debate_result],
+            "agent_reasoning": agent_reasoning,
+            "influence_network": {
+                "nodes": agent_nodes,
+                "links": agent_links
+            },
             "report": report,
             "generated_at": datetime.now().isoformat(),
             "stats": {
                 "total_agents": len(personas) * 10,
                 "total_debate_rounds": 1,
-                "primary_personas": 3
+                "primary_personas": 3,
+                "agents_with_reasoning": len(agent_reasoning)
             },
             "is_mock": True
         }
