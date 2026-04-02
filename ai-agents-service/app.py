@@ -300,7 +300,8 @@ def create_llm_simulation():
             'num_personas': num_personas,
             'variants_per_persona': variants_per_persona,
             'debate_rounds': debate_rounds,
-            'topics': topics
+            'topics': topics,
+            'fast_mode': fast_mode
         },
         'status': 'pending',
         'progress': 0,
