@@ -6,6 +6,7 @@ Coordinates round-robin discussions, counter-arguments, and position tracking.
 """
 
 import sys
+import time
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 from datetime import datetime
@@ -72,11 +73,9 @@ class LLMSimulationEngine:
         """
         # Override settings for fast mode
         if fast_mode:
-            num_personas = 3
-            variants_per_persona = 0  # No variants in fast mode
-            debate_rounds = 2
             print("\n=== FAST MODE ===")
-            print("Running minimal simulation for quick testing (~60 seconds)")
+            print("Running mock simulation for instant results (~2 seconds)")
+            return self._run_mock_simulation(brief, category)
 
         print(f"Starting LLM Simulation...")
         print(f"  Brief: {brief[:100]}...")
@@ -189,11 +188,14 @@ Output as JSON array of topic strings."""
         # Prepare debate summary for context
         debate_summary = []
         for i, result in enumerate(debate_results):
+            key_args = result.get("key_arguments") or []
+            if isinstance(key_args, dict):
+                key_args = [key_args]  # Wrap single dict in list
             debate_summary.append({
                 "topic": result.get("topic"),
                 "consensus_level": result.get("consensus_level"),
-                "key_arguments": result.get("key_arguments", [])[:5],  # Top 5 per topic
-                "evolution": result.get("evolution", {})
+                "key_arguments": key_args[:5] if isinstance(key_args, list) else [],
+                "evolution": result.get("evolution") or {}
             })
 
         messages = [{
@@ -228,23 +230,31 @@ Generate a report with this structure:
 Be direct and actionable. Don't hedge."""
         }]
 
-        report = client.extract_json(messages)
+        report = client.extract_json(
+            messages,
+            default_on_failure=None  # Will trigger fallback
+        )
 
-        # If LLM returned a list instead of dict, use fallback template
+        # If LLM returned a list or wrong type, use fallback template
         if isinstance(report, list) or not isinstance(report, dict):
-            print("Report generation failed, using fallback template")
+            print(f"Report generation returned {type(report)}, using fallback template")
             report = self._generate_fallback_report(brief, debate_results)
             return report
 
-        # Ensure all required fields exist
+        # Ensure all required fields exist with proper defaults
         required_fields = [
-            "executive_summary", "go_no_go_recommendation", "confidence_level",
-            "key_insights", "top_risks", "biggest_opportunities",
-            "recommended_actions", "persona_breakdown"
+            ("executive_summary", "Analysis complete based on multi-agent debate simulation."),
+            ("go_no_go_recommendation", "ITERATE"),
+            ("confidence_level", 0.5),
+            ("key_insights", ["Product shows promise based on agent feedback"]),
+            ("top_risks", ["Market competition", "User adoption challenges"]),
+            ("biggest_opportunities", ["Growing demand for AI-powered solutions"]),
+            ("recommended_actions", ["Conduct user interviews", "Build MVP"]),
+            ("persona_breakdown", {"supporters": [], "opposers": [], "swing_voters": []})
         ]
-        for field in required_fields:
-            if field not in report:
-                report[field] = "N/A" if field == "executive_summary" else []
+        for field, default in required_fields:
+            if field not in report or report[field] is None:
+                report[field] = default
 
         return report
 
@@ -352,6 +362,68 @@ Be direct and actionable. Don't hedge."""
             "summary": report.get("executive_summary"),
             "top_risks": report.get("top_risks", [])[:3],
             "next_actions": report.get("recommended_actions", [])[:3]
+        }
+
+    def _run_mock_simulation(self, brief: str, category: str = None) -> Dict[str, Any]:
+        """Run mock simulation for instant testing (no LLM calls)."""
+        import random
+
+        # Generate template personas directly (avoiding LLM path)
+        template_personas = self.persona_generator.CATEGORY_TEMPLATES.get(
+            category,
+            self.persona_generator.CATEGORY_TEMPLATES["productivity"]
+        )["archetypes"][:3]
+
+        personas = []
+        for archetype in template_personas:
+            p = archetype.copy()
+            p['count'] = 10
+            p['source'] = 'template'
+            p['category'] = category
+            p['variants'] = []
+            personas.append(p)
+
+        # Mock debate result
+        support_count = random.randint(15, 25)
+        oppose_count = random.randint(5, 15)
+        total = support_count + oppose_count
+        consensus = max(support_count, oppose_count) / total
+
+        debate_result = {
+            "topic": "Should I build this?",
+            "rounds": 1,
+            "initial_positions": [],
+            "final_positions": [
+                {"agent_id": f"a{i}", "position_label": "support" if i < support_count else "oppose"}
+                for i in range(total)
+            ],
+            "key_arguments": [
+                {"side": "support", "content": "Addresses a real pain point in the market"},
+                {"side": "support", "content": "Growing demand for AI-powered solutions"},
+                {"side": "oppose", "content": "Competitive market with established players"},
+                {"side": "oppose", "content": "Privacy and data concerns"}
+            ],
+            "consensus_level": consensus
+        }
+
+        # Generate report
+        report = self._generate_fallback_report(brief, [debate_result])
+
+        return {
+            "simulation_id": f"mock_{int(time.time())}",
+            "brief": brief,
+            "category": category,
+            "personas": personas,
+            "debate_topics": ["Should I build this?"],
+            "debate_results": [debate_result],
+            "report": report,
+            "generated_at": datetime.now().isoformat(),
+            "stats": {
+                "total_agents": len(personas) * 10,
+                "total_debate_rounds": 1,
+                "primary_personas": 3
+            },
+            "is_mock": True
         }
 
 

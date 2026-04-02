@@ -285,6 +285,7 @@ def create_llm_simulation():
     variants_per_persona = data.get('variants_per_persona', 5)  # 3-10
     debate_rounds = data.get('debate_rounds', 10)
     topics = data.get('topics')  # Auto-generated if None
+    fast_mode = data.get('fast_mode', False)  # Use mock for instant results
 
     # Create simulation ID
     import uuid
@@ -342,7 +343,8 @@ def run_llm_simulation(sim_id):
             num_personas=config.get('num_personas', 5),
             variants_per_persona=config.get('variants_per_persona', 5),
             debate_rounds=config.get('debate_rounds', 10),
-            topics=config.get('topics')
+            topics=config.get('topics'),
+            fast_mode=config.get('fast_mode', False)
         )
 
         # Store results

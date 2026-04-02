@@ -196,14 +196,19 @@ class LLMClient:
             self.client = OpenAI(base_url=endpoint["base"], api_key=endpoint["key"])
             self.model = model
 
-    def extract_json(self, messages: List[Dict[str, str]], schema_hint: str = None) -> Dict[str, Any]:
+    def extract_json(self, messages: List[Dict[str, str]], schema_hint: str = None, default_on_failure: Dict[str, Any] = None) -> Dict[str, Any]:
         """
         Extract structured JSON from LLM response.
 
         Enhanced for llama3.2 with:
         - Stronger system prompting
         - Multi-stage regex extraction
-        - Fallback to default values
+        - Optional default value on failure
+
+        Args:
+            messages: Chat messages
+            schema_hint: Optional JSON schema hint
+            default_on_failure: Return this dict if extraction fails (instead of None)
         """
         import json
         import re
@@ -213,9 +218,7 @@ class LLMClient:
 1. Output ONLY valid JSON - no text before or after
 2. No markdown, no code blocks, no explanations
 3. Use double quotes for all strings
-4. Follow the exact schema provided
-
-If no schema is provided, output sensible JSON based on the request."""
+4. Follow the exact schema provided"""
 
         if schema_hint:
             system_content += f"\n\nREQUIRED JSON SCHEMA:\n{schema_hint}"
@@ -239,20 +242,57 @@ If no schema is provided, output sensible JSON based on the request."""
         # Remove leading text before first JSON character
         for start_char in ['{', '[']:
             idx = response_text.find(start_char)
-            if idx > 0:
+            if idx >= 0:
                 response_text = response_text[idx:]
                 break
 
         # === Stage 2: Try direct parse first ===
         try:
             result = json.loads(response_text)
-            if isinstance(result, dict):
+            if isinstance(result, (dict, list)):
                 return result
         except json.JSONDecodeError:
             pass
 
-        # === Stage 3: Regex extraction for simple objects ===
-        # Match {...} without nested braces
+        # === Stage 3: Find complete JSON objects using balanced brace matching ===
+        # Find all potential JSON objects by looking for { and matching }
+        i = 0
+        while i < len(response_text):
+            if response_text[i] == '{':
+                depth = 0
+                in_string = False
+                escape_next = False
+                start = i
+                for j in range(i, len(response_text)):
+                    char = response_text[j]
+                    if escape_next:
+                        escape_next = False
+                        continue
+                    if char == '\\' and in_string:
+                        escape_next = True
+                        continue
+                    if char == '"' and not escape_next:
+                        in_string = not in_string
+                        continue
+                    if not in_string:
+                        if char == '{':
+                            depth += 1
+                        elif char == '}':
+                            depth -= 1
+                            if depth == 0:
+                                # Found complete object
+                                try:
+                                    result = json.loads(response_text[start:j+1])
+                                    if isinstance(result, dict):
+                                        return result
+                                except:
+                                    pass
+                                break
+                i = j + 1 if 'j' in locals() else i + 1
+            else:
+                i += 1
+
+        # === Stage 4: Try simple regex for {...} ===
         simple_objects = re.findall(r'\{[^{}]*\}', response_text)
         for match in simple_objects:
             try:
@@ -262,17 +302,7 @@ If no schema is provided, output sensible JSON based on the request."""
             except:
                 continue
 
-        # === Stage 4: Regex for nested objects ===
-        nested_objects = re.findall(r'\{(?:[^{}]|\{[^{}]*\})*\}', response_text, re.DOTALL)
-        for match in nested_objects:
-            try:
-                result = json.loads(match.strip())
-                if isinstance(result, dict):
-                    return result
-            except:
-                continue
-
-        # === Stage 5: Regex for arrays ===
+        # === Stage 5: Try arrays ===
         simple_arrays = re.findall(r'\[[^\[\]]*\]', response_text)
         for match in simple_arrays:
             try:
@@ -282,9 +312,20 @@ If no schema is provided, output sensible JSON based on the request."""
             except:
                 continue
 
-        # === Stage 6: All failed - return None ===
+        # === Stage 6: Try to extract partial JSON for position responses ===
+        # For simple schemas like {"position": "...", "reason": "..."}
+        # try to extract values even from incomplete JSON
+        pos_match = re.search(r'"position"\s*:\s*"([^"]+)"', response_text)
+        reason_match = re.search(r'"reason"\s*:\s*"([^"]+)"', response_text)
+        if pos_match:
+            return {
+                "position": pos_match.group(1),
+                "reason": reason_match.group(1) if reason_match else "Incomplete response"
+            }
+
+        # === Stage 7: All failed - return default ===
         print(f"JSON extraction failed. Response: {response_text[:150]}...")
-        return None
+        return default_on_failure
 
     def batch_chat(
         self,
@@ -416,10 +457,20 @@ Brief:
 
 {f"Context: {context}" if context else ""}
 
-Output as JSON array of personas."""
+Output ONLY a JSON array like this:
+[
+  {{"name": "Persona 1", "count": 15, "core_motivation": "...", "key_pain_point": "...", "likely_objection": "...", "decision_criteria": "...", "behavioral_trigger": "..."}},
+  {{"name": "Persona 2", "count": 15, "core_motivation": "...", "key_pain_point": "...", "likely_objection": "...", "decision_criteria": "...", "behavioral_trigger": "..."}}
+]"""
     }]
 
-    return client.extract_json(messages)
+    result = client.extract_json(messages)
+
+    # If single dict returned, wrap in list
+    if isinstance(result, dict):
+        return [result]
+
+    return result if isinstance(result, list) else []
 
 
 def generate_variants(
@@ -593,16 +644,15 @@ Context: {context or ''}
 
 Respond with JSON: {{"position": "support|oppose|neutral", "reason": "2-3 sentence explanation"}}"""
             }]
-            try:
-                result = self.client.extract_json(messages)
-                position_label = result.get("position", "neutral").lower()
-                reason = result.get("reason", "")
-                # Map to full text for backward compatibility
-                position_text = f"{position_label}: {reason}"
-                return {"agent_id": agent["id"], "position": position_text, "position_label": position_label}
-            except Exception as e:
-                print(f"Position extraction failed for {agent['id']}: {e}")
-                return {"agent_id": agent["id"], "position": "neutral: Unable to determine", "position_label": "neutral"}
+            # Use default value on failure instead of None
+            result = self.client.extract_json(
+                messages,
+                default_on_failure={"position": "neutral", "reason": "No response"}
+            )
+            position_label = result.get("position", "neutral").lower()
+            reason = result.get("reason", "")
+            position_text = f"{position_label}: {reason}"
+            return {"agent_id": agent["id"], "position": position_text, "position_label": position_label}
 
         # Batch get all positions
         import concurrent.futures
