@@ -50,6 +50,7 @@ export function BriefForm({ onStart }: BriefFormProps) {
 
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedMode, setSelectedMode] = useState<string>("llm");
+  const [fastMode, setFastMode] = useState<boolean>(false);
   const [numPersonas, setNumPersonas] = useState<number>(5);
   const [variantsPerPersona, setVariantsPerPersona] = useState<number>(5);
   const [debateRounds, setDebateRounds] = useState<number>(10);
@@ -73,6 +74,7 @@ ${brief.additional_context ? `Additional Context: ${brief.additional_context}` :
       variants_per_persona: variantsPerPersona,
       debate_rounds: debateRounds,
       mode: selectedMode as "llm" | "hybrid",
+      fast_mode: fastMode,
     };
 
     setIsSubmitting(true);
@@ -235,16 +237,27 @@ ${brief.additional_context ? `Additional Context: ${brief.additional_context}` :
 
       {/* Advanced Settings */}
       <div className="bg-gray-50 rounded-xl p-6 mb-8">
-        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-          <Users className="w-5 h-5" />
-          Agent Configuration
-        </h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <Users className="w-5 h-5" />
+            Agent Configuration
+          </h2>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={fastMode}
+              onChange={(e) => setFastMode(e.target.checked)}
+              className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+            />
+            <span className="text-gray-600">Fast Mode (~2 sec)</span>
+          </label>
+        </div>
 
         <div className="grid md:grid-cols-3 gap-6">
           {/* Primary Personas */}
           <div>
-            <label className="block text-sm font-medium mb-2">
-              Primary Personas: {numPersonas}
+            <label className={`block text-sm font-medium mb-2 ${fastMode ? 'text-gray-400' : ''}`}>
+              Primary Personas: {fastMode ? '3 (fixed)' : numPersonas}
             </label>
             <input
               type="range"
@@ -253,15 +266,16 @@ ${brief.additional_context ? `Additional Context: ${brief.additional_context}` :
               step={1}
               value={numPersonas}
               onChange={(e) => setNumPersonas(parseInt(e.target.value))}
-              className="w-full"
+              disabled={fastMode}
+              className={`w-full ${fastMode ? 'opacity-50 cursor-not-allowed' : ''}`}
             />
             <p className="text-xs text-gray-500 mt-1">Distinct behavioral archetypes</p>
           </div>
 
           {/* Variants per Persona */}
           <div>
-            <label className="block text-sm font-medium mb-2">
-              Variants per Persona: {variantsPerPersona}
+            <label className={`block text-sm font-medium mb-2 ${fastMode ? 'text-gray-400' : ''}`}>
+              Variants per Persona: {fastMode ? '10 (fixed)' : variantsPerPersona}
             </label>
             <input
               type="range"
@@ -270,15 +284,16 @@ ${brief.additional_context ? `Additional Context: ${brief.additional_context}` :
               step={1}
               value={variantsPerPersona}
               onChange={(e) => setVariantsPerPersona(parseInt(e.target.value))}
-              className="w-full"
+              disabled={fastMode}
+              className={`w-full ${fastMode ? 'opacity-50 cursor-not-allowed' : ''}`}
             />
             <p className="text-xs text-gray-500 mt-1">Context variations per archetype</p>
           </div>
 
           {/* Debate Rounds */}
           <div>
-            <label className="block text-sm font-medium mb-2">
-              Debate Rounds: {debateRounds}
+            <label className={`block text-sm font-medium mb-2 ${fastMode ? 'text-gray-400' : ''}`}>
+              Debate Rounds: {fastMode ? '2 (fixed)' : debateRounds}
             </label>
             <input
               type="range"
@@ -287,7 +302,8 @@ ${brief.additional_context ? `Additional Context: ${brief.additional_context}` :
               step={1}
               value={debateRounds}
               onChange={(e) => setDebateRounds(parseInt(e.target.value))}
-              className="w-full"
+              disabled={fastMode}
+              className={`w-full ${fastMode ? 'opacity-50 cursor-not-allowed' : ''}`}
             />
             <p className="text-xs text-gray-500 mt-1">More rounds = deeper analysis</p>
           </div>
@@ -296,10 +312,10 @@ ${brief.additional_context ? `Additional Context: ${brief.additional_context}` :
         <div className="mt-4 pt-4 border-t border-gray-200">
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-600">
-              Total agents: <span className="font-medium">{numPersonas * variantsPerPersona}</span>
+              Total agents: <span className="font-medium">{fastMode ? "~30" : numPersonas * variantsPerPersona}</span>
             </span>
             <span className="text-gray-600">
-              Est. duration: <span className="font-medium">~{debateRounds * 1.5} min</span>
+              Est. duration: <span className="font-medium">{fastMode ? "~2 sec" : `~${debateRounds * 1.5} min`}</span>
             </span>
           </div>
         </div>

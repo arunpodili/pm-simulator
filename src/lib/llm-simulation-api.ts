@@ -11,6 +11,7 @@ export interface LLMConfig {
   variants_per_persona: number;
   debate_rounds: number;
   mode: "llm" | "hybrid";
+  fast_mode?: boolean;
 }
 
 export const llmSimulationApi = {
