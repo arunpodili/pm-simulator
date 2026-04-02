@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Card3D } from '@/components/3d/Scene3D';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -211,22 +210,22 @@ export default function TemplatesPage() {
   });
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-white">
       {/* Hero */}
-      <section className="py-20 bg-gradient-to-b from-gray-900 to-black">
+      <section className="py-20 bg-gray-50">
         <div className="container mx-auto px-6">
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center max-w-3xl mx-auto"
           >
-            <Badge variant="outline" className="mb-4 border-white/20">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 text-sm text-gray-600 mb-4">
               50+ Templates Available
-            </Badge>
-            <h1 className="text-5xl md:text-6xl font-bold mb-6">
+            </span>
+            <h1 className="text-4xl md:text-5xl font-semibold text-gray-900 mb-4 tracking-tight">
               Simulation Templates
             </h1>
-            <p className="text-gray-400 text-lg">
+            <p className="text-gray-500 text-lg">
               Pre-built scenarios for every industry. Start with a template, customize to your needs.
             </p>
           </motion.div>
@@ -234,19 +233,19 @@ export default function TemplatesPage() {
       </section>
 
       {/* Tabs & Search */}
-      <section className="py-8 border-b border-gray-800">
+      <section className="py-8 border-b border-gray-100">
         <div className="container mx-auto px-6">
           <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
             {/* Tabs */}
-            <div className="flex bg-gray-900 rounded-lg p-1">
+            <div className="flex bg-gray-100 rounded-lg p-1">
               {(['business', 'personal'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
                   className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
                     activeTab === tab
-                      ? 'bg-white text-black'
-                      : 'text-gray-400 hover:text-white'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
                   {tab === 'business' ? (
@@ -266,26 +265,26 @@ export default function TemplatesPage() {
 
             {/* Search */}
             <div className="relative w-full md:w-96">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
               <Input
                 placeholder="Search templates..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-gray-900 border-gray-800 text-white placeholder:text-gray-500"
+                className="pl-10 bg-white border-gray-200 text-gray-900 placeholder:text-gray-400"
               />
             </div>
           </div>
 
           {/* Category Filters */}
-          <<div className="flex flex-wrap gap-2 mt-6">
+          <div className="flex flex-wrap gap-2 mt-6">
             {categories.map((category) => (
               <button
                 key={category}
                 onClick={() => setActiveCategory(category)}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                   activeCategory === category
-                    ? 'bg-white text-black'
-                    : 'bg-gray-900 text-gray-400 hover:text-white border border-gray-800'
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-white text-gray-600 hover:text-gray-900 border border-gray-200'
                 }`}
               >
                 {category}
@@ -305,58 +304,56 @@ export default function TemplatesPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
-              className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
+              className="grid md:grid-cols-2 lg:grid-cols-3 gap-4"
             >
               {filteredTemplates.map((template, index) => (
                 <motion.div
                   key={template.id}
-                  initial={{ opacity: 0, y: 40 }}
+                  initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  transition={{ duration: 0.4, delay: index * 0.05 }}
                 >
-                  <Card3D>
-                    <Link href={`/simulate?template=${template.id}`}>
-                      <Card className="bg-gray-900/50 border-gray-800 h-full group hover:border-gray-700 transition-all cursor-pointer overflow-hidden">
-                        <div className={`h-2 bg-gradient-to-r ${template.color}`} />
-                        <CardHeader>
-                          <div className="flex items-start justify-between">
-                            <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${template.color} flex items-center justify-center mb-4`}>
-                              <div className="text-white">{template.icon}</div>
-                            </div>
-                            <Badge variant="secondary" className="text-xs">
-                              {template.difficulty}
-                            </Badge>
+                  <Link href={`/simulate?template=${template.id}`}>
+                    <Card className="bg-white border-gray-100 h-full group hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer overflow-hidden">
+                      <div className={`h-1 bg-gradient-to-r ${template.color}`} />
+                      <CardHeader className="pb-2">
+                        <div className="flex items-start justify-between">
+                          <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${template.color} flex items-center justify-center mb-3`}>
+                            <div className="text-white scale-75">{template.icon}</div>
                           </div>
-                          <CardTitle className="text-xl mb-2 group-hover:text-gray-300 transition-colors">
-                            {template.title}
-                          </CardTitle>
-                          <CardDescription className="text-gray-400 line-clamp-2">
-                            {template.description}
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="flex flex-wrap gap-2 mb-4">
-                            {template.tags.map((tag) => (
-                              <span
-                                key={tag}
-                                className="text-xs px-2 py-1 bg-gray-800 text-gray-400 rounded"
-                              >
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-
-                          <div className="flex items-center justify-between text-sm text-gray-500">
-                            <span>⏱️ {template.time}</span>
-                            <span className="flex items-center text-white group-hover:translate-x-1 transition-transform">
-                              Use Template
-                              <ArrowRight className="ml-1 h-4 w-4" />
+                          <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600">
+                            {template.difficulty}
+                          </Badge>
+                        </div>
+                        <CardTitle className="text-lg mb-1 group-hover:text-gray-700 transition-colors">
+                          {template.title}
+                        </CardTitle>
+                        <CardDescription className="text-gray-500 text-sm line-clamp-2">
+                          {template.description}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <div className="flex flex-wrap gap-1.5 mb-4">
+                          {template.tags.map((tag) => (
+                            <span
+                              key={tag}
+                              className="text-xs px-2 py-0.5 bg-gray-50 text-gray-500 rounded"
+                            >
+                              {tag}
                             </span>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  </Card3D>
+                          ))}
+                        </div>
+
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-400">{template.time}</span>
+                          <span className="flex items-center text-gray-700 group-hover:text-gray-900 group-hover:translate-x-0.5 transition-all">
+                            Use Template
+                            <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
                 </motion.div>
               ))}
             </motion.div>
@@ -364,21 +361,21 @@ export default function TemplatesPage() {
 
           {filteredTemplates.length === 0 && (
             <div className="text-center py-20">
-              <p className="text-gray-500">No templates found matching your criteria.</p>
+              <p className="text-gray-400">No templates found matching your criteria.</p>
             </div>
           )}
         </div>
       </section>
 
       {/* CTA */}
-      <section className="py-20 border-t border-gray-800">
+      <section className="py-20 border-t border-gray-100">
         <div className="container mx-auto px-6">
-          <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-12 text-center">
-            <h2 className="text-3xl font-bold mb-4">Need a Custom Template?</h2>
-            <p className="text-gray-400 mb-8 max-w-2xl mx-auto">
+          <div className="bg-gray-900 rounded-xl p-10 text-center">
+            <h2 className="text-2xl font-semibold text-white mb-3">Need a Custom Template?</h2>
+            <p className="text-gray-400 mb-6 max-w-xl mx-auto">
               Can't find what you're looking for? Request a custom template for your specific industry or use case.
             </p>
-            <Button variant="outline" className="border-white text-white hover:bg-white hover:text-black">
+            <Button className="bg-white text-gray-900 hover:bg-gray-100">
               Request Template
             </Button>
           </div>

@@ -5,26 +5,18 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
-import { Scene3D, Card3D } from '@/components/3d/Scene3D';
-import {
-  ArrowRight,
-  Play,
-  Users,
-  TrendingUp,
-  Shield,
-  Zap,
-  ChevronRight,
-} from 'lucide-react';
+import { ArrowRight, Play, Users, TrendingUp, Shield, Zap } from 'lucide-react';
 
+// Fade in from bottom animation
 const fadeInUp = {
-  initial: { opacity: 0, y: 60 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.6, ease: 'easeOut' },
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 },
 };
 
+// Stagger children animation
 const staggerContainer = {
-  animate: {
+  hidden: {},
+  visible: {
     transition: {
       staggerChildren: 0.1,
     },
@@ -32,101 +24,109 @@ const staggerContainer = {
 };
 
 export default function HomePage() {
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setIsLoaded(true);
+    setMounted(true);
   }, []);
 
   const features = [
     {
-      icon: <Users className="h-6 w-6" />,
+      icon: Users,
       title: '10K+ Virtual Users',
       desc: 'Simulate realistic user behavior at scale',
     },
     {
-      icon: <TrendingUp className="h-6 w-6" />,
+      icon: TrendingUp,
       title: 'Predictive Analytics',
       desc: 'Forecast revenue, churn, and growth',
     },
     {
-      icon: <Shield className="h-6 w-6" />,
+      icon: Shield,
       title: 'Risk-Free Testing',
       desc: 'Validate ideas before building',
     },
     {
-      icon: <Zap className="h-6 w-6" />,
+      icon: Zap,
       title: 'Real-Time Insights',
       desc: 'Get results in minutes, not months',
     },
   ];
 
   const industries = [
-    { name: 'SaaS', color: 'bg-blue-500', count: '15+ Templates' },
-    { name: 'FinTech', color: 'bg-green-500', count: '12+ Templates' },
-    { name: 'Health', color: 'bg-red-500', count: '10+ Templates' },
-    { name: 'E-commerce', color: 'bg-orange-500', count: '18+ Templates' },
-    { name: 'AI/ML', color: 'bg-purple-500', count: '8+ Templates' },
-    { name: 'Consumer', color: 'bg-pink-500', count: '14+ Templates' },
+    { name: 'SaaS', count: '15+ Templates' },
+    { name: 'FinTech', count: '12+ Templates' },
+    { name: 'Health', count: '10+ Templates' },
+    { name: 'E-commerce', count: '18+ Templates' },
+    { name: 'AI/ML', count: '8+ Templates' },
+    { name: 'Consumer', count: '14+ Templates' },
   ];
 
-  return (
-    <div className={`min-h-screen bg-black text-white transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
-      {/* Hero Section with 3D */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        <Scene3D />
+  // Animation transition config
+  const transition = { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] };
 
-        <div className="relative z-10 container mx-auto px-6 text-center">
+  return (
+    <div className="min-h-screen bg-white">
+      {/* Hero Section */}
+      <section className="relative min-h-[90vh] flex items-center justify-center">
+        <div className="absolute inset-0 bg-gradient-to-b from-gray-50/50 to-white" />
+
+        <div className="relative z-10 container mx-auto px-6 text-center max-w-5xl">
+          {/* Badge */}
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
+            initial="hidden"
+            animate={mounted ? "visible" : "hidden"}
+            variants={fadeInUp}
+            transition={{ ...transition, delay: 0.1 }}
           >
-            <Badge variant="outline" className="mb-6 border-white/20 text-white/80">
-              🚀 Now with AI-Powered Insights
-            </Badge>
+            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 text-sm text-gray-600 mb-8">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+              Now with AI-Powered Insights
+            </span>
           </motion.div>
 
+          {/* Headline */}
           <motion.h1
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="text-5xl md:text-7xl lg:text-8xl font-bold mb-6 tracking-tight"
+            initial="hidden"
+            animate={mounted ? "visible" : "hidden"}
+            variants={fadeInUp}
+            transition={{ ...transition, delay: 0.2 }}
+            className="text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-gray-900 mb-6"
           >
-            <span className="bg-gradient-to-r from-white via-white to-gray-500 bg-clip-text text-transparent">
-              BEYOND
-            </span>
+            Simulate Before
             <br />
-            <span className="bg-gradient-to-r from-gray-400 via-gray-200 to-white bg-clip-text text-transparent">
-              THE LIMITS
-            </span>
+            <span className="text-gray-400">You Build</span>
           </motion.h1>
 
+          {/* Subheadline */}
           <motion.p
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className="text-lg md:text-xl text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed"
+            initial="hidden"
+            animate={mounted ? "visible" : "hidden"}
+            variants={fadeInUp}
+            transition={{ ...transition, delay: 0.3 }}
+            className="text-lg md:text-xl text-gray-500 mb-10 max-w-2xl mx-auto leading-relaxed"
           >
-            Simulate your product with 10,000+ virtual users before writing a single line of code.
-            Validate market fit, pricing strategies, and user behavior with AI-powered precision.
+            Test your product with 10,000+ virtual users before writing a single line of code.
+            Validate market fit, pricing strategies, and user behavior with precision.
           </motion.p>
 
+          {/* CTA Buttons */}
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.8 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4"
+            initial="hidden"
+            animate={mounted ? "visible" : "hidden"}
+            variants={fadeInUp}
+            transition={{ ...transition, delay: 0.4 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-3"
           >
             <Link href="/simulate">
-              <Button size="lg" className="bg-white text-black hover:bg-gray-200 px-8">
+              <Button size="lg" className="bg-gray-900 text-white hover:bg-gray-800 px-8 h-12 text-base rounded-md">
                 Start Simulation
-                <ArrowRight className="ml-2 h-5 w-5" />
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
             <Link href="/demo">
-              <Button variant="outline" size="lg" className="border-white/20 text-white hover:bg-white/10">
-                <Play className="mr-2 h-5 w-5" />
+              <Button size="lg" className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 px-8 h-12 text-base rounded-md">
+                <Play className="mr-2 h-4 w-4" />
                 View Demo
               </Button>
             </Link>
@@ -134,10 +134,11 @@ export default function HomePage() {
 
           {/* Stats */}
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 1 }}
-            className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto"
+            initial="hidden"
+            animate={mounted ? "visible" : "hidden"}
+            variants={fadeInUp}
+            transition={{ ...transition, delay: 0.5 }}
+            className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-3xl mx-auto"
           >
             {[
               { value: '95%', label: 'Accuracy Rate' },
@@ -146,68 +147,51 @@ export default function HomePage() {
               { value: '50+', label: 'Templates' },
             ].map((stat, index) => (
               <div key={index} className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-white mb-1">{stat.value}</div>
-                <div className="text-sm text-gray-500">{stat.label}</div>
+                <div className="text-2xl md:text-3xl font-semibold text-gray-900 mb-1">{stat.value}</div>
+                <div className="text-sm text-gray-400">{stat.label}</div>
               </div>
             ))}
           </motion.div>
         </div>
-
-        {/* Scroll indicator */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.5 }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2"
-        >
-          <div className="w-6 h-10 border-2 border-white/20 rounded-full flex justify-center">
-            <motion.div
-              animate={{ y: [0, 12, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-              className="w-1.5 h-3 bg-white/60 rounded-full mt-2"
-            />
-          </div>
-        </motion.div>
       </section>
 
       {/* Features Section */}
-      <section className="py-32 bg-black">
+      <section className="py-24 bg-gray-50/50">
         <div className="container mx-auto px-6">
           <motion.div
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
             variants={staggerContainer}
-            className="text-center mb-20"
+            className="text-center mb-16"
           >
-            <motion.h2 variants={fadeInUp} className="text-4xl md:text-5xl font-bold mb-6">
+            <motion.h2 variants={fadeInUp} transition={transition} className="text-3xl md:text-4xl font-semibold text-gray-900 mb-4">
               Why PM Simulator?
             </motion.h2>
-            <motion.p variants={fadeInUp} className="text-gray-400 text-lg max-w-2xl mx-auto">
+            <motion.p variants={fadeInUp} transition={transition} className="text-gray-500 text-lg max-w-2xl mx-auto">
               Everything you need to validate product decisions before investing months of development.
             </motion.p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
             {features.map((feature, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-50px" }}
+                variants={fadeInUp}
+                transition={{ ...transition, delay: index * 0.1 }}
               >
-                <Card3D>
-                  <Card className="bg-gray-900/50 border-gray-800 h-full hover:bg-gray-900 transition-colors">
-                    <CardContent className="p-8">
-                      <div className="w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center mb-4">
-                        {feature.icon}
-                      </div>
-                      <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                      <p className="text-gray-400">{feature.desc}</p>
-                    </CardContent>
-                  </Card>
-                </Card3D>
+                <Card className="bg-white border-gray-100 h-full hover:border-gray-200 hover:shadow-sm transition-all duration-200 rounded-lg">
+                  <CardContent className="p-6">
+                    <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mb-4">
+                      <feature.icon className="h-5 w-5 text-gray-700" />
+                    </div>
+                    <h3 className="text-base font-medium mb-2 text-gray-900">{feature.title}</h3>
+                    <p className="text-sm text-gray-500 leading-relaxed">{feature.desc}</p>
+                  </CardContent>
+                </Card>
               </motion.div>
             ))}
           </div>
@@ -215,49 +199,46 @@ export default function HomePage() {
       </section>
 
       {/* Industry Templates Section */}
-      <section className="py-32 bg-gray-950">
+      <section className="py-24 bg-white">
         <div className="container mx-auto px-6">
           <motion.div
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
             variants={staggerContainer}
-            className="text-center mb-20"
+            className="text-center mb-16"
           >
-            <motion.h2 variants={fadeInUp} className="text-4xl md:text-5xl font-bold mb-6">
-              Industry-Specific Templates
+            <motion.h2 variants={fadeInUp} transition={transition} className="text-3xl md:text-4xl font-semibold text-gray-900 mb-4">
+              Industry Templates
             </motion.h2>
-            <motion.p variants={fadeInUp} className="text-gray-400 text-lg max-w-2xl mx-auto">
+            <motion.p variants={fadeInUp} transition={transition} className="text-gray-500 text-lg max-w-2xl mx-auto">
               Pre-built scenarios for every major industry. Customize to your needs.
             </motion.p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {industries.map((industry, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: index * 0.1 }}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-50px" }}
+                variants={fadeInUp}
+                transition={{ ...transition, delay: index * 0.1 }}
               >
-                <Card3D>
-                  <Link href={`/templates?industry=${industry.name.toLowerCase()}`}>
-                    <Card className="bg-gray-900/50 border-gray-800 h-full group hover:border-gray-700 transition-all cursor-pointer">
-                      <CardContent className="p-8">
-                        <div className={`w-4 h-4 ${industry.color} rounded-full mb-4`} />
-                        <h3 className="text-2xl font-bold mb-2 group-hover:text-gray-300 transition-colors">
+                <Link href={`/templates?industry=${industry.name.toLowerCase()}`}>
+                  <Card className="bg-white border-gray-100 h-full group hover:border-gray-300 hover:shadow-sm transition-all duration-200 cursor-pointer rounded-lg">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-lg font-medium text-gray-900 group-hover:text-gray-700 transition-colors">
                           {industry.name}
                         </h3>
-                        <p className="text-gray-500">{industry.count}</p>
-                        <div className="mt-4 flex items-center text-sm text-gray-400 group-hover:text-white transition-colors">
-                          Explore
-                          <ChevronRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                </Card3D>
+                        <ArrowRight className="h-4 w-4 text-gray-300 group-hover:text-gray-500 group-hover:translate-x-0.5 transition-all" />
+                      </div>
+                      <p className="text-sm text-gray-400">{industry.count}</p>
+                    </CardContent>
+                  </Card>
+                </Link>
               </motion.div>
             ))}
           </div>
@@ -265,31 +246,29 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-32 bg-black relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-indigo-900/20 via-purple-900/20 to-pink-900/20" />
-
-        <div className="container mx-auto px-6 relative z-10">
+      <section className="py-24 bg-gray-900">
+        <div className="container mx-auto px-6">
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center max-w-3xl mx-auto"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={fadeInUp}
+            transition={transition}
+            className="text-center max-w-2xl mx-auto"
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+            <h2 className="text-3xl md:text-4xl font-semibold text-white mb-4">
               Ready to Validate Your Product?
             </h2>
-            <p className="text-gray-400 text-lg mb-10">
+            <p className="text-gray-400 text-lg mb-8">
               Join thousands of product managers who simulate before they build.
               No credit card required.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/simulate">
-                <Button size="lg" className="bg-white text-black hover:bg-gray-200 px-8">
-                  Start Free Simulation
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-            </div>
+            <Link href="/simulate">
+              <Button size="lg" className="bg-white text-gray-900 hover:bg-gray-100 px-8 h-12 text-base rounded-md">
+                Start Free Simulation
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
           </motion.div>
         </div>
       </section>

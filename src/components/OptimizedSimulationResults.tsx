@@ -1,11 +1,5 @@
-"""
-Optimized Simulation Results Component
-
-Uses React.memo, useMemo, and lazy loading for performance.
-"""
-
 import React, { useMemo, useCallback, memo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { useMemoizedSimulation } from '@/hooks/useMemoizedSimulation';
 
 // Memoized metric card component
