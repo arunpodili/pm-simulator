@@ -1,14 +1,22 @@
 """
 AI Agents Service v2.0 - Production-Ready PM Simulator
-With Streaming, Field Mapping, Async Jobs, and Validation
+With Streaming, Field Mapping, Async Jobs, Validation, and Security
 """
 
 import os
 import sys
 from datetime import datetime
-from flask import Flask, request, jsonify, Response, stream_with_context
+from flask import Flask, request, jsonify, Response, stream_with_context, g
 from flask_cors import CORS
 from dotenv import load_dotenv
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
@@ -23,20 +31,64 @@ from streaming import init_streaming, streaming_bp
 from field_mapper import map_user_brief
 from validation import validate_simulation_results
 
+# Import security modules
+try:
+    from auth_middleware import (
+        require_auth, require_role, require_owner_or_admin,
+        handle_login, handle_logout, handle_refresh, get_auth_token
+    )
+    AUTH_AVAILABLE = True
+except ImportError:
+    AUTH_AVAILABLE = False
+    logger.warning("Authentication module not available")
+
+try:
+    from rate_limiter import limiter, api_limit, simulation_limit
+    RATE_LIMIT_AVAILABLE = True
+except ImportError:
+    RATE_LIMIT_AVAILABLE = False
+    logger.warning("Rate limiting module not available")
+
+try:
+    from cleanup import cleanup_manager, init_cleanup
+    CLEANUP_AVAILABLE = True
+except ImportError:
+    CLEANUP_AVAILABLE = False
+    logger.warning("Cleanup module not available")
+
+try:
+    from cache import cache, cache_manager, cache_5m, cache_1h, get_cache_stats
+    CACHE_AVAILABLE = True
+except ImportError:
+    CACHE_AVAILABLE = False
+    logger.warning("Cache module not available")
+
 # Import Celery tasks (optional - if Redis is available)
 try:
     from tasks import run_simulation_task, get_task_info, revoke_task
     CELERY_AVAILABLE = True
 except ImportError:
     CELERY_AVAILABLE = False
-    print("Warning: Celery not available. Running in synchronous mode.")
+    logger.warning("Celery not available. Running in synchronous mode.")
 
 app = Flask(__name__)
-CORS(app)
 
-# Initialize streaming module
-init_streaming(app, SimulationEngine(), {})
-app.register_blueprint(streaming_bp)
+# Initialize compression
+from response_compression import init_compression
+init_compression(app)
+
+CORS(app, resources={
+    r"/api/*": {
+        "origins": os.getenv('ALLOWED_ORIGINS', '*').split(','),
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Authorization", "Content-Type"]
+    }
+})
+
+# Initialize rate limiter
+if RATE_LIMIT_AVAILABLE:
+    limiter.init_app(app)
+    logger.info("Rate limiting enabled")
 
 # Simulation storage
 active_simulations = {}
@@ -44,6 +96,26 @@ simulation_results = {}
 simulation_engine = SimulationEngine()
 llm_simulation_engine = LLMSimulationEngine()
 hybrid_simulation_engine = HybridSimulationEngine()
+
+# Initialize cleanup manager
+if CLEANUP_AVAILABLE:
+    init_cleanup(app, active_simulations, simulation_results)
+    logger.info("Cleanup manager initialized")
+
+# Initialize streaming module (with auth wrapper)
+init_streaming(app, SimulationEngine(), {})
+app.register_blueprint(streaming_bp)
+
+# Register v2 API blueprints
+from api_v2 import simulations as sim_v2
+app.register_blueprint(sim_v2.bp)
+
+
+def get_current_user_id():
+    """Get current user ID from auth context or return anonymous."""
+    if AUTH_AVAILABLE and hasattr(g, 'current_user'):
+        return g.current_user.get('sub', 'anonymous')
+    return 'anonymous'
 
 # ============================================================================
 # HEALTH & INFO ENDPOINTS
@@ -182,10 +254,48 @@ def get_presets():
 
 
 # ============================================================================
-# SIMULATION ENDPOINTS (Enhanced)
+# AUTHENTICATION ENDPOINTS
 # ============================================================================
 
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    """User login endpoint."""
+    if not AUTH_AVAILABLE:
+        return jsonify({'error': 'Authentication not available'}), 503
+    return handle_login()
+
+
+@app.route('/api/auth/logout', methods=['POST'])
+def logout():
+    """User logout endpoint."""
+    if not AUTH_AVAILABLE:
+        return jsonify({'error': 'Authentication not available'}), 503
+    return handle_logout()
+
+
+@app.route('/api/auth/refresh', methods=['POST'])
+def refresh():
+    """Token refresh endpoint."""
+    if not AUTH_AVAILABLE:
+        return jsonify({'error': 'Authentication not available'}), 503
+    return handle_refresh()
+
+
+# ============================================================================
+# SIMULATION ENDPOINTS (Enhanced + Secured)
+# ============================================================================
+
+def auth_and_limit(f):
+    """Combined decorator for auth and rate limiting."""
+    if AUTH_AVAILABLE:
+        f = require_auth(f)
+    if RATE_LIMIT_AVAILABLE:
+        f = api_limit(f)
+    return f
+
+
 @app.route('/api/simulation/create', methods=['POST'])
+@auth_and_limit
 def create_simulation():
     """Create a new simulation with enhanced validation"""
     data = request.json
@@ -194,6 +304,9 @@ def create_simulation():
         return jsonify({'error': 'No data provided'}), 400
 
     try:
+        # Get current user ID
+        user_id = get_current_user_id()
+
         # Build simulation config
         config = SimulationConfig(
             name=data.get('name', 'Untitled Simulation'),
@@ -215,14 +328,21 @@ def create_simulation():
         import uuid
         sim_id = str(uuid.uuid4())[:8]
 
-        # Store config
+        # Store config with user_id
         active_simulations[sim_id] = {
             'config': config,
             'status': 'pending',
             'progress': 0,
             'created_at': datetime.now().isoformat(),
+            'user_id': user_id,
             'has_streaming': True
         }
+
+        # Register with cleanup manager
+        if CLEANUP_AVAILABLE:
+            cleanup_manager.register(sim_id, user_id, 'pending')
+
+        logger.info(f"Simulation {sim_id} created by user {user_id}")
 
         return jsonify({
             'success': True,
@@ -237,25 +357,41 @@ def create_simulation():
         })
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"Failed to create simulation: {e}")
+        return jsonify({'error': 'Failed to create simulation'}), 500
 
 
 @app.route('/api/simulation/<sim_id>/run', methods=['POST'])
+@auth_and_limit
 def run_simulation(sim_id):
     """Run simulation synchronously"""
     if sim_id not in active_simulations:
         return jsonify({'error': 'Simulation not found'}), 404
 
     sim_data = active_simulations[sim_id]
-    config = sim_data['config']
 
+    # Check ownership
+    if AUTH_AVAILABLE:
+        error = require_owner_or_admin(sim_data.get('user_id', 'anonymous'))
+        if error:
+            return error
+
+    config = sim_data['config']
     sim_data['status'] = 'running'
+
+    # Update cleanup manager
+    if CLEANUP_AVAILABLE:
+        cleanup_manager.update_status(sim_id, 'running')
 
     try:
         result = simulation_engine.run_simulation(config)
         simulation_results[sim_id] = result
         sim_data['status'] = 'completed'
         sim_data['progress'] = 100
+
+        # Update cleanup manager
+        if CLEANUP_AVAILABLE:
+            cleanup_manager.update_status(sim_id, 'completed', size_bytes=sys.getsizeof(result))
 
         return jsonify({
             'success': True,
@@ -272,11 +408,13 @@ def run_simulation(sim_id):
 
     except Exception as e:
         sim_data['status'] = 'failed'
-        sim_data['error'] = str(e)
-        return jsonify({'error': str(e)}), 500
+        sim_data['error'] = 'Simulation failed'  # Sanitized
+        logger.error(f"Simulation {sim_id} failed: {e}")
+        return jsonify({'error': 'Simulation failed'}), 500
 
 
 @app.route('/api/simulation/<sim_id>/run-async', methods=['POST'])
+@auth_and_limit
 def run_simulation_async(sim_id):
     """
     Run simulation asynchronously using Celery.
@@ -292,6 +430,13 @@ def run_simulation_async(sim_id):
         return jsonify({'error': 'Simulation not found'}), 404
 
     sim_data = active_simulations[sim_id]
+
+    # Check ownership
+    if AUTH_AVAILABLE:
+        error = require_owner_or_admin(sim_data.get('user_id', 'anonymous'))
+        if error:
+            return error
+
     config = sim_data['config']
 
     try:
@@ -300,6 +445,9 @@ def run_simulation_async(sim_id):
 
         sim_data['status'] = 'queued'
         sim_data['task_id'] = task.id
+
+        if CLEANUP_AVAILABLE:
+            cleanup_manager.update_status(sim_id, 'queued')
 
         return jsonify({
             'success': True,
@@ -354,8 +502,9 @@ def validate_simulation(sim_id):
 
 
 @app.route('/api/validation/benchmarks', methods=['GET'])
+@cache_1h(key_prefix='benchmarks')
 def get_benchmarks():
-    """Get available industry benchmarks"""
+    """Get available industry benchmarks (cached for 1 hour)"""
     from validation import validator
 
     return jsonify({

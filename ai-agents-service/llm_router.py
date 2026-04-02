@@ -226,7 +226,14 @@ class AnthropicClient(BaseLLMClient):
                 ) as response:
                     if response.status != 200:
                         error_text = await response.text()
-                        raise Exception(f"Claude API error: {response.status} - {error_text}")
+                        # Sanitize error - don't expose API keys or full error details
+                        logger.error(f"Claude API error: {response.status}")
+                        safe_error = f"Claude API returned status {response.status}"
+                        if response.status == 401:
+                            safe_error = "Authentication failed with Claude API"
+                        elif response.status == 429:
+                            safe_error = "Rate limited by Claude API"
+                        raise Exception(safe_error)
 
                     data = await response.json()
                     content = data["content"][0]["text"]
@@ -322,7 +329,14 @@ class GeminiClient(BaseLLMClient):
                 ) as response:
                     if response.status != 200:
                         error_text = await response.text()
-                        raise Exception(f"Gemini API error: {response.status} - {error_text}")
+                        # Sanitize error - don't expose API keys
+                        logger.error(f"Gemini API error: {response.status}")
+                        safe_error = f"Gemini API returned status {response.status}"
+                        if response.status == 400:
+                            safe_error = "Invalid request to Gemini API"
+                        elif response.status == 429:
+                            safe_error = "Rate limited by Gemini API"
+                        raise Exception(safe_error)
 
                     data = await response.json()
                     content = data["candidates"][0]["content"]["parts"][0]["text"]

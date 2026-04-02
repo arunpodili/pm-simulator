@@ -149,19 +149,24 @@ class SimulationStreamer:
         Returns:
             Day processing results
         """
-        # Simulate day processing
-        # In real implementation, this calls simulation_engine.process_day()
-
+        # Use per-instance random to avoid race conditions
         import random
-        random.seed(config.random_seed + day if config.random_seed else None)
+
+        # Create Random instance per simulation to avoid global state conflicts
+        if not hasattr(self, '_random'):
+            self._random = random.Random()
+
+        # Seed the random instance with simulation-specific seed
+        seed = config.random_seed + day if config.random_seed else None
+        self._random.seed(seed)
 
         return {
             'day': day,
-            'new_users': random.randint(10, 50),
-            'churned': random.randint(0, 5),
-            'conversions': random.randint(1, 10),
-            'revenue': random.uniform(100, 500),
-            'satisfaction': random.uniform(0.6, 0.9)
+            'new_users': self._random.randint(10, 50),
+            'churned': self._random.randint(0, 5),
+            'conversions': self._random.randint(1, 10),
+            'revenue': self._random.uniform(100, 500),
+            'satisfaction': self._random.uniform(0.6, 0.9)
         }
 
     def _extract_day_metrics(self, day_data: Dict[str, Any]) -> Dict[str, Any]:

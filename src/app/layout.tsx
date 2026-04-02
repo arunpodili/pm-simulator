@@ -1,40 +1,55 @@
-import type { Metadata } from "next";
-import { Inter, Playfair_Display, IBM_Plex_Mono } from "next/font/google";
-import { UserProvider } from "@/context/UserContext";
-import "./globals.css";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-ui",
-});
-
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  variable: "--font-heading",
-});
-
-const ibmPlexMono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
-  variable: "--font-body",
-});
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import '../styles/globals-minimal.css';
+import { AuthProvider } from '@/lib/context/AuthContext';
+import { Header } from '@/components/Header';
 
 export const metadata: Metadata = {
-  title: "PM Simulator - Product Management Training Platform",
-  description: "Master product management with industry-specific templates, embedded learning, and community case studies",
+  title: 'PM Simulator - Product Management Simulation',
+  description: 'Simulate and validate product decisions before building',
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable} ${ibmPlexMono.variable}`}>
-      <body className="antialiased bg-white text-gray-900">
-        <UserProvider>
-          {children}
-        </UserProvider>
+    <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="antialiased">
+        <AuthProvider>
+          <Header />
+
+          <main className="min-h-screen bg-white">
+            {children}
+          </main>
+
+          <footer className="border-t border-gray-200 bg-white mt-auto">
+            <div className="container mx-auto px-6 py-8">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <p className="text-sm text-gray-500">
+                  © 2026 PM Simulator. All rights reserved.
+                </p>
+                <div className="flex items-center gap-6">
+                  <Link href="/docs" className="text-sm text-gray-500 hover:text-black transition-colors">
+                    Documentation
+                  </Link>
+                  <Link href="/help" className="text-sm text-gray-500 hover:text-black transition-colors">
+                    Help Center
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </footer>
+        </AuthProvider>
       </body>
     </html>
   );
