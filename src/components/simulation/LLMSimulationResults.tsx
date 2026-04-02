@@ -17,6 +17,8 @@ import {
   Lightbulb,
   Shield,
   Network,
+  Copy,
+  Check,
 } from "lucide-react";
 import { AgentGraph } from "./AgentGraph";
 
@@ -28,6 +30,29 @@ interface LLMSimulationResultsProps {
 export function LLMSimulationResults({ data, onNewSimulation }: LLMSimulationResultsProps) {
   const [activeTab, setActiveTab] = useState<"report" | "personas" | "debates" | "graph">("report");
   const [expandedPersona, setExpandedPersona] = useState<string | null>(null);
+  const [copiedSection, setCopiedSection] = useState<string | null>(null);
+
+  const copyToClipboard = async (text: string, sectionId: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedSection(sectionId);
+      setTimeout(() => setCopiedSection(null), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
+
+  const getReportAsText = () => {
+    let text = `LLM SIMULATION REPORT\n${"=".repeat(50)}\n\n`;
+    text += `Recommendation: ${report.go_no_go_recommendation || "N/A"}\n`;
+    text += `Confidence: ${report.confidence_level ? Math.round(report.confidence_level * 100) : "N/A"}%\n\n`;
+    text += `EXECUTIVE SUMMARY:\n${report.executive_summary || "N/A"}\n\n`;
+    text += `KEY INSIGHTS:\n${report.key_insights?.map((i: string) => `- ${i}`).join("\n") || "N/A"}\n\n`;
+    text += `TOP RISKS:\n${report.top_risks?.map((r: string) => `- ${r}`).join("\n") || "N/A"}\n\n`;
+    text += `OPPORTUNITIES:\n${report.biggest_opportunities?.map((o: string) => `- ${o}`).join("\n") || "N/A"}\n\n`;
+    text += `RECOMMENDED ACTIONS:\n${report.recommended_actions?.map((a: string) => `- ${a}`).join("\n") || "N/A"}`;
+    return text;
+  };
 
   const report = data?.report || {};
   const personas = data?.personas || [];
@@ -119,9 +144,9 @@ export function LLMSimulationResults({ data, onNewSimulation }: LLMSimulationRes
         </button>
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200 mb-6">
-        <div className="flex gap-8">
+      {/* Tabs with Copy Button */}
+      <div className="border-b border-gray-200 mb-6 flex items-center justify-between">
+        <div className="flex gap-8 flex-1">
           <button
             onClick={() => setActiveTab("report")}
             className={`pb-4 font-medium transition-colors relative ${
@@ -175,6 +200,24 @@ export function LLMSimulationResults({ data, onNewSimulation }: LLMSimulationRes
             )}
           </button>
         </div>
+        {activeTab === "report" && (
+          <button
+            onClick={() => copyToClipboard(getReportAsText(), "report")}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+          >
+            {copiedSection === "report" ? (
+              <>
+                <Check className="w-4 h-4" />
+                Copied!
+              </>
+            ) : (
+              <>
+                <Copy className="w-4 h-4" />
+                Copy Report
+              </>
+            )}
+          </button>
+        )}
       </div>
 
       {/* Tab Content */}
@@ -182,10 +225,28 @@ export function LLMSimulationResults({ data, onNewSimulation }: LLMSimulationRes
         <div className="space-y-6">
           {/* Key Insights */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              <Lightbulb className="w-5 h-5 text-yellow-500" />
-              Key Insights
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <Lightbulb className="w-5 h-5 text-yellow-500" />
+                Key Insights
+              </h2>
+              <button
+                onClick={() => copyToClipboard(report.key_insights?.join("\n") || "", "insights")}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+              >
+                {copiedSection === "insights" ? (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    Copy
+                  </>
+                )}
+              </button>
+            </div>
             <ul className="space-y-3">
               {report.key_insights?.map((insight: string, i: number) => (
                 <li key={i} className="flex items-start gap-3">
@@ -200,10 +261,28 @@ export function LLMSimulationResults({ data, onNewSimulation }: LLMSimulationRes
           <div className="grid md:grid-cols-2 gap-6">
             {/* Top Risks */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-red-500" />
-                Top Risks
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 text-red-500" />
+                  Top Risks
+                </h2>
+                <button
+                  onClick={() => copyToClipboard(report.top_risks?.join("\n") || "", "risks")}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                >
+                  {copiedSection === "risks" ? (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5" />
+                      Copy
+                    </>
+                  )}
+                </button>
+              </div>
               <ul className="space-y-3">
                 {report.top_risks?.map((risk: string, i: number) => (
                   <li key={i} className="flex items-start gap-3">
@@ -216,10 +295,28 @@ export function LLMSimulationResults({ data, onNewSimulation }: LLMSimulationRes
 
             {/* Opportunities */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-green-500" />
-                Biggest Opportunities
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-green-500" />
+                  Biggest Opportunities
+                </h2>
+                <button
+                  onClick={() => copyToClipboard(report.biggest_opportunities?.join("\n") || "", "opportunities")}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                >
+                  {copiedSection === "opportunities" ? (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5" />
+                      Copy
+                    </>
+                  )}
+                </button>
+              </div>
               <ul className="space-y-3">
                 {report.biggest_opportunities?.map((opp: string, i: number) => (
                   <li key={i} className="flex items-start gap-3">
@@ -233,10 +330,28 @@ export function LLMSimulationResults({ data, onNewSimulation }: LLMSimulationRes
 
           {/* Recommended Actions */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              <Target className="w-5 h-5 text-blue-500" />
-              Recommended Next Actions
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <Target className="w-5 h-5 text-blue-500" />
+                Recommended Next Actions
+              </h2>
+              <button
+                onClick={() => copyToClipboard(report.recommended_actions?.join("\n") || "", "actions")}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+              >
+                {copiedSection === "actions" ? (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    Copy
+                  </>
+                )}
+              </button>
+            </div>
             <div className="space-y-3">
               {report.recommended_actions?.map((action: string, i: number) => (
                 <div
