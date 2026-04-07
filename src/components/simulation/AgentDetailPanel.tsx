@@ -1,89 +1,77 @@
-"use client";
+'use client';
 
 import {
   X,
   User,
-  MessageSquare,
   TrendingUp,
   TrendingDown,
   Minus,
-  ArrowRight,
+  Calendar,
+  DollarSign,
   Brain,
   Users,
+  Activity,
+  Star,
+  MapPin,
+  GraduationCap,
+  Briefcase,
 } from "lucide-react";
-
-interface DebateRound {
-  round: number;
-  argument: string;
-  sentiment: string;
-}
-
-interface AgentDetail {
-  agent_id: string;
-  persona: string;
-  position: "support" | "oppose" | "neutral";
-  confidence: number;
-  reasoning: string;
-  influencedBy?: string[];
-  influenced?: string[];
-  debateRounds?: DebateRound[];
-}
+import { GraphNode } from "@/lib/api/types";
+import {
+  getStateLabel,
+  getArchetypeInfo,
+  getActionIcon,
+} from "@/lib/api/ruleBasedSimulation";
 
 interface AgentDetailPanelProps {
-  agent: AgentDetail | null;
+  agent: GraphNode | null;
   onClose: () => void;
 }
 
 export function AgentDetailPanel({ agent, onClose }: AgentDetailPanelProps) {
-  if (!agent) return null;
+  if (!agent || !agent.agent) return null;
 
-  const getPositionColor = (position: string) => {
-    switch (position) {
-      case "support":
-        return "text-green-400 bg-green-400/10 border-green-400/30";
-      case "oppose":
-        return "text-red-400 bg-red-400/10 border-red-400/30";
-      default:
-        return "text-gray-400 bg-gray-400/10 border-gray-400/30";
-    }
+  const persona = agent.agent;
+  const archetypeInfo = getArchetypeInfo(persona.behavioral.archetype);
+
+  const getStateColor = (state: string) => {
+    const colors: Record<string, string> = {
+      unaware: 'bg-gray-400/10 text-gray-400 border-gray-400/30',
+      aware: 'bg-blue-500/10 text-blue-400 border-blue-400/30',
+      signed_up: 'bg-violet-500/10 text-violet-400 border-violet-400/30',
+      active: 'bg-amber-500/10 text-amber-400 border-amber-400/30',
+      engaged: 'bg-emerald-500/10 text-emerald-400 border-emerald-400/30',
+      premium: 'bg-emerald-600/10 text-emerald-500 border-emerald-500/30',
+      churned: 'bg-red-500/10 text-red-400 border-red-400/30',
+    };
+    return colors[state] || 'bg-gray-400/10 text-gray-400';
   };
 
-  const getPositionIcon = (position: string) => {
-    switch (position) {
-      case "support":
-        return <TrendingUp className="w-4 h-4" />;
-      case "oppose":
-        return <TrendingDown className="w-4 h-4" />;
-      default:
-        return <Minus className="w-4 h-4" />;
-    }
-  };
-
-  const getSentimentColor = (sentiment: string) => {
-    switch (sentiment) {
-      case "positive":
-        return "text-green-400";
-      case "negative":
-        return "text-red-400";
-      default:
-        return "text-yellow-400";
-    }
+  const getSatisfactionColor = (score: number) => {
+    if (score >= 7) return 'text-emerald-400';
+    if (score >= 4) return 'text-amber-400';
+    return 'text-red-400';
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-gray-900 rounded-2xl border border-gray-700 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+      <div className="bg-gray-900 rounded-2xl border border-gray-700 shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-700">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
-              <User className="w-5 h-5 text-white" />
+            <div
+              className="w-12 h-12 rounded-full flex items-center justify-center text-2xl"
+              style={{ backgroundColor: `${archetypeInfo.color}30` }}
+            >
+              {archetypeInfo.icon}
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-white">
-                {agent.persona}
-              </h2>
-              <p className="text-sm text-gray-400">{agent.agent_id}</p>
+              <h2 className="text-xl font-semibold text-white">{agent.name}</h2>
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <span>ID: {persona.id}</span>
+                <span>•</span>
+                <span className="capitalize">{persona.demographics.occupation}</span>
+              </div>
             </div>
           </div>
           <button
@@ -96,137 +84,268 @@ export function AgentDetailPanel({ agent, onClose }: AgentDetailPanelProps) {
 
         {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
-          {/* Position & Confidence */}
-          <div className="flex items-center gap-4 mb-6">
-            <div
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${getPositionColor(
-                agent.position
-              )}`}
-            >
-              {getPositionIcon(agent.position)}
-              <span className="font-medium capitalize">{agent.position}</span>
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm text-gray-400">Confidence</span>
-                <span className="text-sm font-medium text-white">
-                  {Math.round(agent.confidence * 100)}%
-                </span>
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            {/* Current State */}
+            <div className={`p-4 rounded-xl border ${getStateColor(persona.current_state)}`}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm opacity-80">Current State</span>
+                <Activity className="w-4 h-4 opacity-60" />
               </div>
-              <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+              <div className="text-2xl font-bold">{getStateLabel(persona.current_state)}</div>
+            </div>
+
+            {/* Archetype */}
+            <div
+              className="p-4 rounded-xl border"
+              style={{
+                backgroundColor: `${archetypeInfo.color}15`,
+                borderColor: `${archetypeInfo.color}40`,
+              }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm opacity-80" style={{ color: archetypeInfo.color }}>
+                  Archetype
+                </span>
+                <Star className="w-4 h-4 opacity-60" style={{ color: archetypeInfo.color }} />
+              </div>
+              <div className="text-2xl font-bold" style={{ color: archetypeInfo.color }}>
+                {archetypeInfo.label}
+              </div>
+            </div>
+
+            {/* Satisfaction */}
+            <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-gray-400">Satisfaction</span>
+                <TrendingUp className="w-4 h-4 text-gray-500" />
+              </div>
+              <div className={`text-2xl font-bold ${getSatisfactionColor(persona.satisfaction_score)}`}>
+                {persona.satisfaction_score.toFixed(1)}
+                <span className="text-lg text-gray-500">/10</span>
+              </div>
+              <div className="mt-2 h-2 bg-gray-700 rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full ${
-                    agent.position === "support"
-                      ? "bg-green-500"
-                      : agent.position === "oppose"
-                      ? "bg-red-500"
-                      : "bg-gray-500"
+                    persona.satisfaction_score >= 7
+                      ? 'bg-emerald-500'
+                      : persona.satisfaction_score >= 4
+                      ? 'bg-amber-500'
+                      : 'bg-red-500'
                   }`}
-                  style={{ width: `${agent.confidence * 100}%` }}
+                  style={{ width: `${persona.satisfaction_score * 10}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Engagement */}
+            <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-gray-400">Engagement Level</span>
+                <Users className="w-4 h-4 text-gray-500" />
+              </div>
+              <div className={`text-2xl font-bold ${getSatisfactionColor(persona.engagement_level)}`}>
+                {persona.engagement_level.toFixed(1)}
+                <span className="text-lg text-gray-500">/10</span>
+              </div>
+              <div className="mt-2 h-2 bg-gray-700 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full ${
+                    persona.engagement_level >= 7
+                      ? 'bg-emerald-500'
+                      : persona.engagement_level >= 4
+                      ? 'bg-amber-500'
+                      : 'bg-red-500'
+                  }`}
+                  style={{ width: `${persona.engagement_level * 10}%` }}
                 />
               </div>
             </div>
           </div>
 
-          {/* Reasoning */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <Brain className="w-4 h-4 text-purple-400" />
-              <h3 className="font-medium text-white">Reasoning</h3>
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Demographics */}
+            <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700">
+              <div className="flex items-center gap-2 mb-4">
+                <User className="w-4 h-4 text-purple-400" />
+                <h3 className="font-medium text-white">Demographics</h3>
+              </div>
+              <div className="space-y-3 text-sm">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-gray-400">
+                    <Calendar className="w-4 h-4" />
+                    Age
+                  </div>
+                  <span className="text-white">{persona.demographics.age} years</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-gray-400">
+                    <MapPin className="w-4 h-4" />
+                    Location
+                  </div>
+                  <span className="text-white">{persona.demographics.location}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-gray-400">
+                    <Briefcase className="w-4 h-4" />
+                    Occupation
+                  </div>
+                  <span className="text-white">{persona.demographics.occupation}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-gray-400">
+                    <GraduationCap className="w-4 h-4" />
+                    Education
+                  </div>
+                  <span className="capitalize text-white">{persona.demographics.education.replace('_', ' ')}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-gray-400">
+                    <DollarSign className="w-4 h-4" />
+                    Income Level
+                  </div>
+                  <span className="capitalize text-white">{persona.demographics.income_level}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-gray-400">
+                    <Brain className="w-4 h-4" />
+                    Tech Savviness
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-20 h-2 bg-gray-700 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-blue-500 rounded-full"
+                        style={{ width: `${persona.demographics.tech_savviness * 10}%` }}
+                      />
+                    </div>
+                    <span className="text-white">{persona.demographics.tech_savviness}/10</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
-              <p className="text-gray-300 leading-relaxed">{agent.reasoning}</p>
+
+            {/* Behavioral Traits */}
+            <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700">
+              <div className="flex items-center gap-2 mb-4">
+                <Brain className="w-4 h-4 text-blue-400" />
+                <h3 className="font-medium text-white">Behavioral Traits</h3>
+              </div>
+              <div className="space-y-3 text-sm">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-gray-400">Price Sensitivity</span>
+                    <span className="text-white">{persona.behavioral.price_sensitivity}/10</span>
+                  </div>
+                  <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-amber-500 rounded-full"
+                      style={{ width: `${persona.behavioral.price_sensitivity * 10}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-gray-400">Pain Tolerance</span>
+                    <span className="text-white">{persona.behavioral.pain_tolerance}/10</span>
+                  </div>
+                  <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-red-500 rounded-full"
+                      style={{ width: `${persona.behavioral.pain_tolerance * 10}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-400">Decision Style</span>
+                  <span className="capitalize text-white">{persona.behavioral.decision_making_style}</span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-400">Feature Preference</span>
+                  <span className="capitalize text-white">{persona.behavioral.feature_preference}</span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-400">Decision Power</span>
+                  <span className="capitalize text-white">{persona.context.decision_making_power}</span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-400">Timeline Urgency</span>
+                  <span className="capitalize text-white">{persona.context.timeline_urgency}</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Debate Journey */}
-          {agent.debateRounds && agent.debateRounds.length > 0 && (
-            <div className="mb-6">
-              <div className="flex items-center gap-2 mb-3">
-                <MessageSquare className="w-4 h-4 text-blue-400" />
-                <h3 className="font-medium text-white">Debate Journey</h3>
+          {/* Context */}
+          <div className="mt-6 bg-gray-800/30 rounded-xl p-4 border border-gray-700">
+            <div className="flex items-center gap-2 mb-4">
+              <Activity className="w-4 h-4 text-emerald-400" />
+              <h3 className="font-medium text-white">Current Context</h3>
+            </div>
+            <div className="grid md:grid-cols-3 gap-4 text-sm">
+              <div>
+                <span className="text-gray-400">Pain Level: </span>
+                <span className="text-white">{persona.context.current_pain_level}/10</span>
               </div>
-              <div className="space-y-3">
-                {agent.debateRounds.map((round) => (
+              <div>
+                <span className="text-gray-400">Budget: </span>
+                <span className="capitalize text-white">
+                  {persona.context.budget_constraints || 'Not specified'}
+                </span>
+              </div>
+              <div className="md:col-span-1">
+                <span className="text-gray-400">Alternatives Used: </span>
+                <span className="text-white">{persona.context.alternatives_used.join(', ')}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Timeline */}
+          {persona.actions_taken && persona.actions_taken.length > 0 && (
+            <div className="mt-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Calendar className="w-4 h-4 text-blue-400" />
+                <h3 className="font-medium text-white">Action Timeline</h3>
+              </div>
+              <div className="space-y-2">
+                {persona.actions_taken.map((action, index) => (
                   <div
-                    key={round.round}
+                    key={index}
                     className="flex items-start gap-3 bg-gray-800/30 rounded-lg p-3"
                   >
-                    <div className="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center text-xs font-medium text-gray-300 flex-shrink-0">
-                      {round.round}
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-lg">
+                      {getActionIcon(action.action)}
                     </div>
                     <div className="flex-1">
-                      <p className="text-gray-300 text-sm">{round.argument}</p>
-                      <span
-                        className={`text-xs mt-1 inline-block ${getSentimentColor(
-                          round.sentiment
-                        )}`}
-                      >
-                        {round.sentiment}
-                      </span>
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-white">{action.action}</span>
+                        <span className="text-xs text-gray-500">Day {action.day}</span>
+                      </div>
+                      <p className="text-sm text-gray-400 mt-1">{action.reason}</p>
+                      <div className="flex items-center gap-2 mt-2 text-xs">
+                        <span className="text-gray-500">Satisfaction change:</span>
+                        <span
+                          className={
+                            action.satisfaction_change > 0
+                              ? 'text-emerald-400'
+                              : action.satisfaction_change < 0
+                              ? 'text-red-400'
+                              : 'text-gray-400'
+                          }
+                        >
+                          {action.satisfaction_change > 0 ? '+' : ''}
+                          {action.satisfaction_change.toFixed(1)}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
           )}
-
-          {/* Influence Network */}
-          <div className="grid grid-cols-2 gap-4">
-            {/* Influenced By */}
-            {agent.influencedBy && agent.influencedBy.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <ArrowRight className="w-4 h-4 text-green-400 rotate-180" />
-                  <h3 className="font-medium text-white text-sm">
-                    Influenced By
-                  </h3>
-                </div>
-                <div className="space-y-2">
-                  {agent.influencedBy.slice(0, 3).map((id) => (
-                    <div
-                      key={id}
-                      className="bg-gray-800/30 rounded-lg px-3 py-2 text-sm text-gray-300"
-                    >
-                      {id.replace(/_/g, " ")}
-                    </div>
-                  ))}
-                  {agent.influencedBy.length > 3 && (
-                    <div className="text-xs text-gray-500">
-                      +{agent.influencedBy.length - 3} more
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Influenced */}
-            {agent.influenced && agent.influenced.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <ArrowRight className="w-4 h-4 text-blue-400" />
-                  <h3 className="font-medium text-white text-sm">
-                    Influenced
-                  </h3>
-                </div>
-                <div className="space-y-2">
-                  {agent.influenced.slice(0, 3).map((id) => (
-                    <div
-                      key={id}
-                      className="bg-gray-800/30 rounded-lg px-3 py-2 text-sm text-gray-300"
-                    >
-                      {id.replace(/_/g, " ")}
-                    </div>
-                  ))}
-                  {agent.influenced.length > 3 && (
-                    <div className="text-xs text-gray-500">
-                      +{agent.influenced.length - 3} more
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
         </div>
       </div>
     </div>

@@ -58,10 +58,32 @@ export function LLMSimulationResults({ data, onNewSimulation }: LLMSimulationRes
     return text;
   };
 
-  const report = data?.report || {};
+  // Support both LLM and Rule-Based data structures
+  const report = data?.report || data?.final_metrics || {};
   const personas = data?.personas || [];
-  const debateResults = data?.debate_results || [];
-  const stats = data?.stats || {};
+  const debateResults = data?.debate_results || data?.timeline || [];
+  const stats = data?.stats || {
+    total_agents: personas.length,
+    primary_personas: data?.config?.persona_count || 0,
+    agents_with_reasoning: data?.agent_reasoning?.length || 0,
+  };
+
+  // Use agent_reasoning for 3D graph if available, otherwise transform personas
+  const agentReasoning = data?.agent_reasoning || personas.slice(0, 100).map((p: any) => ({
+    id: p.id,
+    name: p.name,
+    position: p.current_state === "advocate" ? "support" :
+                p.current_state === "churn" || p.current_state === "complain" ? "oppose" : "neutral",
+    confidence: Math.max(0, Math.min(1, (p.satisfaction_score + 10) / 20)),
+    reasoning: `Archetype: ${p.behavioral?.archetype || "unknown"}. Satisfaction: ${p.satisfaction_score?.toFixed(1) || 0}`,
+    debateRounds: p.actions_taken?.map((a: any, idx: number) => ({
+      round: idx + 1,
+      argument: `${a.action} on day ${a.day}`,
+      sentiment: a.satisfaction > 0 ? "positive" : "negative"
+    })) || [],
+    influencedBy: data?.social_graph?.[p.id]?.map((c: any) => c.target_id || c).slice(0, 3) || [],
+    influenced: [],
+  }));
 
   const getRecommendationColor = (rec: string) => {
     if (rec === "GO") return "text-green-600 bg-green-50 border-green-200";
@@ -86,7 +108,9 @@ export function LLMSimulationResults({ data, onNewSimulation }: LLMSimulationRes
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Sparkles className="w-5 h-5" />
-              <span className="text-sm font-medium opacity-90">LLM Simulation Complete</span>
+              <span className="text-sm font-medium opacity-90">
+                {data?.is_mock ? "Rule-Based Simulation Complete" : "Simulation Complete"}
+              </span>
             </div>
             <h1 className="text-3xl font-serif font-bold mb-2">
               {report.go_no_go_recommendation ? (
@@ -117,15 +141,15 @@ export function LLMSimulationResults({ data, onNewSimulation }: LLMSimulationRes
         <div className="flex items-center gap-6 mt-6 text-sm">
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4" />
-            <span>{stats.total_agents || 0} agents simulated</span>
+            <span>{stats.total_agents || personas.length || 0} personas simulated</span>
           </div>
           <div className="flex items-center gap-2">
             <MessageSquare className="w-4 h-4" />
-            <span>{stats.total_debate_rounds || 0} debate rounds</span>
+            <span>{report.nps ? `NPS: ${Math.round(report.nps)}` : `${data?.config?.simulation_days || 90} days simulated`}</span>
           </div>
           <div className="flex items-center gap-2">
             <Target className="w-4 h-4" />
-            <span>{primaryPersonas.length} primary personas</span>
+            <span>{primaryPersonas.length || personas.length} personas in network</span>
           </div>
         </div>
       </div>
@@ -566,8 +590,8 @@ export function LLMSimulationResults({ data, onNewSimulation }: LLMSimulationRes
                   3D Agent Network
                 </h2>
                 <p className="text-gray-600 mt-1">
-                  Explore how {data?.agent_reasoning?.length || 0} AI agents formed their opinions in 3D space.
-                  Rotate, zoom, and click agents to understand their reasoning.
+                  Explore how {agentReasoning.length} virtual personas are distributed in 3D space.
+                  Color shows adoption state. Rotate, zoom, and click to see individual journeys.
                 </p>
               </div>
               <div className="flex items-center gap-2 px-4 py-2 bg-purple-50 rounded-lg">
@@ -580,7 +604,7 @@ export function LLMSimulationResults({ data, onNewSimulation }: LLMSimulationRes
 
             <div className="rounded-xl overflow-hidden border border-gray-200">
               <Agent3DGraph
-                agentReasoning={data?.agent_reasoning || []}
+                agentReasoning={agentReasoning}
                 width={800}
                 height={550}
                 onAgentSelect={setSelectedAgent}
@@ -588,12 +612,12 @@ export function LLMSimulationResults({ data, onNewSimulation }: LLMSimulationRes
             </div>
 
             <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <h4 className="font-medium text-gray-900 mb-2">Why this builds trust:</h4>
+              <h4 className="font-medium text-gray-900 mb-2">Understanding the 3D Network:</h4>
               <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
-                <li>Each sphere represents an AI agent with unique reasoning</li>
-                <li>Green = Supporting, Red = Opposing, Gray = Neutral</li>
-                <li>Animated particles show information flow between agents</li>
-                <li>Click any agent to see their complete thought process</li>
+                <li>Each sphere represents a virtual persona in the simulation</li>
+                <li>Green = Advocates, Red = Churned/Detractors, Gray = Neutral/Passive</li>
+                <li>Animated particles show social influence between personas</li>
+                <li>Click any persona to see their adoption journey and attributes</li>
               </ul>
             </div>
           </div>

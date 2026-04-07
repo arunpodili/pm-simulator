@@ -631,6 +631,217 @@ def get_simulation_results(sim_id):
 
 
 # ============================================================================
+# ENHANCED SIMULATION ENDPOINTS (For 3D Visualization)
+# ============================================================================
+
+@app.route('/api/simulation/<sim_id>/stream')
+def stream_simulation(sim_id):
+    """Stream simulation progress via Server-Sent Events"""
+    if sim_id not in active_simulations:
+        return jsonify({'error': 'Simulation not found'}), 404
+
+    sim_data = active_simulations[sim_id]
+
+    def generate():
+        import time
+        import json
+
+        # Send initial progress
+        yield f"data: {json.dumps({'type': 'progress', 'data': {'progress': sim_data.get('progress', 0)}, 'timestamp': datetime.now().isoformat()})}\n\n"
+
+        # Poll for progress updates
+        last_progress = -1
+        max_wait = 300  # 5 minutes timeout
+        waited = 0
+
+        while waited < max_wait:
+            current_progress = sim_data.get('progress', 0)
+            current_status = sim_data.get('status', 'pending')
+
+            if current_progress != last_progress:
+                yield f"data: {json.dumps({'type': 'progress', 'data': {'progress': current_progress}, 'timestamp': datetime.now().isoformat()})}\n\n"
+                last_progress = current_progress
+
+            if current_status == 'completed':
+                # Send full results
+                if sim_id in simulation_results:
+                    result = simulation_results[sim_id]
+                    yield f"data: {json.dumps({'type': 'complete', 'data': _serialize_result(result, sim_id), 'timestamp': datetime.now().isoformat()})}\n\n"
+                break
+
+            if current_status == 'failed':
+                yield f"data: {json.dumps({'type': 'error', 'data': {'message': sim_data.get('error', 'Simulation failed')}, 'timestamp': datetime.now().isoformat()})}\n\n"
+                break
+
+            time.sleep(1)
+            waited += 1
+
+        # Final complete event if not already sent
+        if waited >= max_wait:
+            yield f"data: {json.dumps({'type': 'error', 'data': {'message': 'Simulation timeout'}, 'timestamp': datetime.now().isoformat()})}\n\n"
+
+    return Response(
+        generate(),
+        mimetype='text/event-stream',
+        headers={
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'Access-Control-Allow-Origin': '*'
+        }
+    )
+
+
+def _serialize_result(result, sim_id):
+    """Serialize simulation result for JSON response"""
+    return {
+        'id': sim_id,
+        'config': {
+            'name': result.config.name,
+            'target_industry': result.config.target_industry,
+            'persona_count': result.config.persona_count,
+            'simulation_days': result.config.simulation_days
+        },
+        'status': 'completed',
+        'progress': 100,
+        'personas': [
+            {
+                'id': p.id,
+                'name': getattr(p, 'name', f'Agent {i}'),
+                'demographics': {
+                    'age': getattr(p.demographics, 'age', 30),
+                    'location': getattr(p.demographics, 'location', 'Unknown'),
+                    'income_level': getattr(p.demographics, 'income_level', 'medium'),
+                    'education': getattr(p.demographics, 'education', 'college'),
+                    'occupation': getattr(p.demographics, 'occupation', 'Professional'),
+                    'tech_savviness': getattr(p.demographics, 'tech_savviness', 5),
+                    'industry': getattr(p.demographics, 'industry', 'saas')
+                },
+                'behavioral': {
+                    'archetype': getattr(p.behavioral, 'archetype', 'EARLY_MAJORITY').name,
+                    'price_sensitivity': getattr(p.behavioral, 'price_sensitivity', 5),
+                    'feature_preference': getattr(p.behavioral, 'feature_preference', 'simplicity'),
+                    'decision_making_style': getattr(p.behavioral, 'decision_making_style', 'analytical'),
+                    'pain_tolerance': getattr(p.behavioral, 'pain_tolerance', 5)
+                },
+                'context': {
+                    'current_pain_level': getattr(p.context, 'current_pain_level', 5),
+                    'alternatives_used': getattr(p.context, 'alternatives_used', []),
+                    'budget_constraints': getattr(p.context, 'budget_constraints', None),
+                    'decision_making_power': getattr(p.context, 'decision_making_power', 'individual'),
+                    'timeline_urgency': getattr(p.context, 'timeline_urgency', 'medium')
+                },
+                'current_state': getattr(p, 'current_state', 'unaware'),
+                'satisfaction_score': getattr(p, 'satisfaction_score', 5.0),
+                'engagement_level': getattr(p, 'engagement_level', 5.0),
+                'actions_taken': getattr(p, 'actions_taken', [])
+            }
+            for i, p in enumerate(result.personas)
+        ],
+        'social_graph': {},  # Will be populated if available
+        'timeline': [
+            {
+                'day': t.get('day', i),
+                'events': t.get('events', []),
+                'metrics': t.get('metrics', {})
+            }
+            for i, t in enumerate(result.timeline)
+        ],
+        'final_metrics': result.final_metrics,
+        'predicted_adoption_curve': result.predicted_adoption_curve,
+        'predicted_churn_rate': result.predicted_churn_rate,
+        'predicted_nps': result.predicted_nps,
+        'predicted_clv': result.predicted_clv,
+        'cohort_analysis': result.cohort_analysis,
+        'insights': []
+    }
+
+
+@app.route('/api/simulation/<sim_id>/agent/<agent_id>/journey', methods=['GET'])
+def get_agent_journey(sim_id, agent_id):
+    """Get the journey/timeline of a specific agent"""
+    if sim_id not in simulation_results:
+        return jsonify({'error': 'Simulation results not found'}), 404
+
+    result = simulation_results[sim_id]
+
+    # Find the agent
+    agent = None
+    for persona in result.personas:
+        if str(getattr(persona, 'id', '')) == agent_id:
+            agent = persona
+            break
+
+    if not agent:
+        return jsonify({'error': 'Agent not found'}), 404
+
+    # Extract journey from timeline
+    journey = []
+    for day_data in result.timeline:
+        for event in day_data.get('events', []):
+            if event.get('agent_id') == agent_id:
+                journey.append({
+                    'day': day_data.get('day', 0),
+                    'action': event.get('action', 'UNKNOWN'),
+                    'reason': f"State changed from {event.get('previous_state')} to {event.get('current_state')}",
+                    'satisfaction_change': round(event.get('satisfaction', 5) - agent.satisfaction_score, 2)
+                })
+
+    return jsonify(journey)
+
+
+@app.route('/api/simulation/<sim_id>/export', methods=['GET'])
+def export_simulation(sim_id):
+    """Export simulation results in various formats"""
+    if sim_id not in simulation_results:
+        return jsonify({'error': 'Simulation results not found'}), 404
+
+    result = simulation_results[sim_id]
+    format_type = request.args.get('format', 'json')
+
+    if format_type == 'json':
+        return jsonify(_serialize_result(result, sim_id))
+    elif format_type == 'csv':
+        # Generate CSV
+        import csv
+        import io
+
+        output = io.StringIO()
+        writer = csv.writer(output)
+
+        # Header
+        writer.writerow([
+            'agent_id', 'name', 'age', 'location', 'occupation',
+            'tech_savviness', 'archetype', 'price_sensitivity',
+            'current_state', 'satisfaction_score', 'engagement_level'
+        ])
+
+        # Data
+        for persona in result.personas:
+            writer.writerow([
+                getattr(persona, 'id', ''),
+                getattr(persona, 'name', ''),
+                getattr(persona.demographics, 'age', ''),
+                getattr(persona.demographics, 'location', ''),
+                getattr(persona.demographics, 'occupation', ''),
+                getattr(persona.demographics, 'tech_savviness', ''),
+                getattr(persona.behavioral, 'archetype', ''),
+                getattr(persona.behavioral, 'price_sensitivity', ''),
+                getattr(persona, 'current_state', ''),
+                getattr(persona, 'satisfaction_score', ''),
+                getattr(persona, 'engagement_level', '')
+            ])
+
+        output.seek(0)
+        return Response(
+            output.getvalue(),
+            mimetype='text/csv',
+            headers={'Content-Disposition': f'attachment; filename=simulation_{sim_id}.csv'}
+        )
+    else:
+        return jsonify({'error': 'Unsupported format'}), 400
+
+
+# ============================================================================
 # MAIN
 # ============================================================================
 

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import './globals.css';
 import { AuthProvider } from '@/lib/context/AuthContext';
+import { UserProvider } from '@/context/UserContext';
 import { Header } from '@/components/Header';
 
 export const metadata: Metadata = {
@@ -26,13 +27,14 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         <AuthProvider>
-          <Header />
+          <UserProvider>
+            <Header />
 
-          <main className="min-h-screen bg-white">
-            {children}
-          </main>
+            <main className="min-h-screen bg-white">
+              {children}
+            </main>
 
-          <footer className="border-t border-gray-200 bg-white mt-auto">
+            <footer className="border-t border-gray-200 bg-white mt-auto">
             <div className="container mx-auto px-6 py-8">
               <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                 <p className="text-sm text-gray-500">
@@ -49,6 +51,7 @@ export default function RootLayout({
               </div>
             </div>
           </footer>
+          </UserProvider>
         </AuthProvider>
       </body>
     </html>
