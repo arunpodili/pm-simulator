@@ -34,7 +34,7 @@ export function useStructuredFields(frameworks: FrameworkConfig[]) {
   }, [frameworks]);
 
   const [values, setValues] = useState(initialValues);
-  const [touched, setTouched] = useState<Record<string, Record<string, boolean>>({});
+  const [touched, setTouched] = useState<Record<string, Record<string, boolean>>>({});
 
   const setFieldValue = useCallback(
     (frameworkId: string, fieldId: string, value: string) => {

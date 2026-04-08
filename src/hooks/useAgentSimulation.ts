@@ -136,8 +136,7 @@ export function useAgentSimulation(simulationId: string) {
       case 'agent_state_change':
         if (event.agentId && event.toState) {
           setAgents((prev) =>
-            prev.map((agent) =
-003e
+            prev.map((agent) =>
               agent.id === event.agentId
                 ? { ...agent, state: event.toState as AgentState['state'] }
                 : agent
