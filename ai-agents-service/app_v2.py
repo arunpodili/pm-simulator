@@ -110,12 +110,14 @@ app.register_blueprint(streaming_bp)
 from api_v2 import simulations as sim_v2
 from api_v2.personas import personas_bp
 from api_v2.change_logs import change_logs_bp
+from api_v2.monitoring import monitoring_bp
 
 app.register_blueprint(sim_v2.bp)
 app.register_blueprint(personas_bp)
 app.register_blueprint(change_logs_bp)
+app.register_blueprint(monitoring_bp)
 
-logger.info("Registered API v2 blueprints: simulations, personas, change_logs")
+logger.info("Registered API v2 blueprints: simulations, personas, change_logs, monitoring")
 
 
 def get_current_user_id():
