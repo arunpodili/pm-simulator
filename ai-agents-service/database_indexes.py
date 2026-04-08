@@ -29,6 +29,14 @@ INDEXES = {
     'audit_logs': [
         {'name': 'idx_audit_action_time', 'columns': ['action', 'created_at']},
         {'name': 'idx_audit_user_time', 'columns': ['user_id', 'created_at']},
+    ],
+    'simulation_personas': [
+        {'name': 'idx_personas_sim_id', 'columns': ['simulation_id']},
+        {'name': 'idx_personas_pain_tech', 'columns': ['pain_level', 'tech_savviness']},
+    ],
+    'change_logs': [
+        {'name': 'idx_changelog_sim_id', 'columns': ['simulation_id']},
+        {'name': 'idx_changelog_author_time', 'columns': ['author_id', 'created_at']},
     ]
 }
 
