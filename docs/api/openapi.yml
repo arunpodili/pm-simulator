@@ -1,0 +1,651 @@
+openapi: 3.0.3
+info:
+  title: PM Simulator API
+  description: |
+    Product Management Simulator API - AI-powered market simulation platform.
+
+    ## Authentication
+    All endpoints except `/api/health` and `/api/auth/*` require JWT authentication.
+    Pass the token in the Authorization header: `Bearer <token>`
+
+    ## Rate Limiting
+    - General API: 10 requests/second
+    - Authentication: 5 requests/minute
+
+  version: 2.0.0
+  contact:
+    name: PM Simulator Team
+    url: https://github.com/arunpodili/pm-simulator
+
+servers:
+  - url: http://localhost:5001
+    description: Development server
+  - url: https://api.pm-simulator.com
+    description: Production server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+        details:
+          type: object
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    Simulation:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        brief:
+          type: string
+        industry:
+          type: string
+          enum: [saas, fintech, health, e-commerce, ai-ml]
+        status:
+          type: string
+          enum: [draft, running, completed, failed]
+        mode:
+          type: string
+          enum: [rule_based, llm]
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+
+    SimulationResults:
+      type: object
+      properties:
+        id:
+          type: integer
+        simulation_id:
+          type: integer
+        conversion_rate:
+          type: number
+          format: float
+        churn_rate:
+          type: number
+          format: float
+        nps_score:
+          type: number
+          format: float
+        satisfaction_score:
+          type: number
+          format: float
+        insights:
+          type: array
+          items:
+            type: string
+        agent_network:
+          type: object
+
+    Persona:
+      type: object
+      properties:
+        id:
+          type: integer
+        simulation_id:
+          type: integer
+        name:
+          type: string
+        role:
+          type: string
+        pain_level:
+          type: integer
+          minimum: 1
+          maximum: 5
+        tech_savviness:
+          type: integer
+          minimum: 1
+          maximum: 5
+        purchase_urgency:
+          type: integer
+          minimum: 1
+          maximum: 5
+        demographics:
+          type: object
+        behavior_traits:
+          type: array
+          items:
+            type: string
+
+    FrameworkSection:
+      type: object
+      properties:
+        id:
+          type: integer
+        simulation_id:
+          type: integer
+        section_type:
+          type: string
+          enum: [what, who, why, impact, when]
+        content:
+          type: string
+        hints_applied:
+          type: array
+          items:
+            type: string
+
+    ChangeLog:
+      type: object
+      properties:
+        id:
+          type: integer
+        simulation_id:
+          type: integer
+        author_id:
+          type: integer
+        change_type:
+          type: string
+          enum: [edit, revert, hint_applied, export]
+        field:
+          type: string
+        old_value:
+          type: object
+        new_value:
+          type: object
+        reason:
+          type: string
+        impact:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/health:
+    get:
+      summary: Health check
+      description: Check if the API is running and healthy
+      security: []
+      responses:
+        200:
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/auth/register:
+    post:
+      summary: Register new user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, name]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                name:
+                  type: string
+      responses:
+        201:
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  token:
+                    type: string
+
+  /api/auth/login:
+    post:
+      summary: Login user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        200:
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  token:
+                    type: string
+                  expires_in:
+                    type: integer
+
+  /api/auth/refresh:
+    post:
+      summary: Refresh JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        200:
+          description: Token refreshed successfully
+
+  /api/simulation/llm/create:
+    post:
+      summary: Create new simulation (LLM mode)
+      description: Create a new simulation using LLM-driven agents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, brief]
+              properties:
+                title:
+                  type: string
+                brief:
+                  type: string
+                industry:
+                  type: string
+                  enum: [saas, fintech, health, e-commerce, ai-ml]
+                  default: saas
+                mode:
+                  type: string
+                  enum: [rule_based, llm]
+                  default: llm
+                fast_mode:
+                  type: boolean
+                  default: false
+                  description: Run with mock data for faster development
+      responses:
+        201:
+          description: Simulation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Simulation'
+
+  /api/simulation/{id}:
+    get:
+      summary: Get simulation details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Simulation details
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Simulation'
+                  - type: object
+                    properties:
+                      personas:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Persona'
+                      change_logs:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ChangeLog'
+
+  /api/simulation/{id}/run:
+    post:
+      summary: Run simulation
+      description: Start the simulation execution
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        202:
+          description: Simulation started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  task_id:
+                    type: string
+
+  /api/simulation/{id}/results:
+    get:
+      summary: Get simulation results
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Simulation results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulationResults'
+
+  /api/simulation/history:
+    get:
+      summary: List user simulations
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        200:
+          description: List of simulations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  simulations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Simulation'
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+
+  /api/simulation/stream:
+    get:
+      summary: Stream simulation progress
+      description: SSE endpoint for real-time simulation updates
+      parameters:
+        - name: simulation_id
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: SSE stream of progress updates
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /api/v2/simulations/{id}/personas:
+    get:
+      summary: List simulation personas
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: List of personas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Persona'
+
+    post:
+      summary: Create persona
+      description: Maximum 5 personas per simulation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, role, pain_level, tech_savviness]
+              properties:
+                name:
+                  type: string
+                role:
+                  type: string
+                pain_level:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                tech_savviness:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                purchase_urgency:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                demographics:
+                  type: object
+                behavior_traits:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        201:
+          description: Persona created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Persona'
+        400:
+          description: Maximum personas reached (limit: 5)
+
+  /api/v2/simulations/{id}/framework:
+    get:
+      summary: Get structured framework sections
+      description: Retrieve What/Who/Why/Impact/When framework content
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Framework sections
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  what:
+                    $ref: '#/components/schemas/FrameworkSection'
+                  who:
+                    $ref: '#/components/schemas/FrameworkSection'
+                  why:
+                    $ref: '#/components/schemas/FrameworkSection'
+                  impact:
+                    $ref: '#/components/schemas/FrameworkSection'
+                  when:
+                    $ref: '#/components/schemas/FrameworkSection'
+
+    put:
+      summary: Update framework section
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [section_type, content]
+              properties:
+                section_type:
+                  type: string
+                  enum: [what, who, why, impact, when]
+                content:
+                  type: string
+                hints_applied:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        200:
+          description: Section updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FrameworkSection'
+
+  /api/v2/simulations/{id}/export:
+    post:
+      summary: Export simulation results
+      description: Export to PDF, Docx, Notion, or Google Docs
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [format]
+              properties:
+                format:
+                  type: string
+                  enum: [pdf, docx, notion, google_docs]
+                include_visualizations:
+                  type: boolean
+                  default: true
+                sections:
+                  type: array
+                  items:
+                    type: string
+                  description: Specific sections to include (default: all)
+      responses:
+        200:
+          description: Export completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  download_url:
+                    type: string
+                  format:
+                    type: string
+                  expires_at:
+                    type: string
+                    format: date-time
+
+  /api/v2/simulations/{id}/hints:
+    get:
+      summary: Get available hints
+      description: Retrieve contextual hints for simulation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: context
+          in: query
+          schema:
+            type: string
+            enum: [framework_what, framework_who, framework_why, framework_impact, framework_when, results_insights, agent_behavior]
+      responses:
+        200:
+          description: Available hints
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  hints:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        content:
+                          type: string
+                        source:
+                          type: string
+                        icon:
+                          type: string
