@@ -88,6 +88,8 @@ class Simulation(Base):
     user = relationship("User", back_populates="simulations")
     result = relationship("SimulationResult", back_populates="simulation", uselist=False, cascade="all, delete-orphan")
     timeline = relationship("SimulationTimeline", back_populates="simulation", cascade="all, delete-orphan")
+    custom_personas = relationship("SimulationPersona", back_populates="simulation", cascade="all, delete-orphan")
+    change_logs = relationship("ChangeLog", back_populates="simulation", cascade="all, delete-orphan")
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -392,3 +394,8 @@ def log_api_request(session, user_id: Optional[str], endpoint: str, method: str,
     session.add(log)
     session.flush()
     return log
+
+
+# Import and register new models
+from models.simulation_persona import SimulationPersona
+from models.change_log import ChangeLog
