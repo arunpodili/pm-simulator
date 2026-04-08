@@ -1,0 +1,152 @@
+version: '3.8'
+
+services:
+  # Frontend (Next.js)
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+      target: frontend-builder
+    container_name: pm-simulator-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://localhost:5001
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - pm-simulator-network
+
+  # Backend (Flask)
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+      target: backend
+    container_name: pm-simulator-backend
+    ports:
+      - "5001:5001"
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_URL=postgresql://postgres:${DB_PASSWORD}@database:5432/pm_simulator
+      - REDIS_URL=redis://redis:6379/0
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - SECRET_KEY=${SECRET_KEY}
+    depends_on:
+      - database
+      - redis
+    restart: unless-stopped
+    networks:
+      - pm-simulator-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Database (PostgreSQL)
+  database:
+    image: postgres:15-alpine
+    container_name: pm-simulator-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=pm_simulator
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./ai-agents-service/migrations:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - pm-simulator-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis (Caching & Celery)
+  redis:
+    image: redis:7-alpine
+    container_name: pm-simulator-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - pm-simulator-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Nginx (Load Balancer / Reverse Proxy)
+  nginx:
+    image: nginx:alpine
+    container_name: pm-simulator-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.production.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+    networks:
+      - pm-simulator-network
+
+  # Celery Worker (Background Tasks)
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+      target: backend
+    container_name: pm-simulator-celery
+    command: celery -A backend.tasks worker --loglevel=info
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_URL=postgresql://postgres:${DB_PASSWORD}@database:5432/pm_simulator
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - database
+      - redis
+    restart: unless-stopped
+    networks:
+      - pm-simulator-network
+
+  # Celery Beat (Scheduled Tasks)
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+      target: backend
+    container_name: pm-simulator-celery-beat
+    command: celery -A backend.tasks beat --loglevel=info
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_URL=postgresql://postgres:${DB_PASSWORD}@database:5432/pm_simulator
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - database
+      - redis
+    restart: unless-stopped
+    networks:
+      - pm-simulator-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  pm-simulator-network:
+    driver: bridge
