@@ -13,3 +13,8 @@ export { AgentNetworkSimple } from './AgentNetworkSimple';
 export { AgentNode } from './AgentNode';
 export { ViewControls } from './ViewControls';
 export { TimelineScrubber } from './TimelineScrubber';
+
+// Hooks
+export { useAgentData } from './hooks/useAgentData';
+export { usePerformanceMonitor } from './hooks/usePerformanceMonitor';
+export { useSelectedAgent } from './hooks/useSelectedAgent';
