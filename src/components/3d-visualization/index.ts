@@ -6,3 +6,6 @@ export { AgentNetwork3D } from './AgentNetwork3D';
 export { AgentDetailCard } from './AgentDetailCard';
 export { ViewControls } from './ViewControls';
 export { TimelineScrubber } from './TimelineScrubber';
+export { CameraController } from './CameraController';
+export { TrustBadge } from './TrustBadge';
+export { StatsOverlay } from './StatsOverlay';
