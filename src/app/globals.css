@@ -3,44 +3,74 @@
 @tailwind utilities;
 
 /* ============================================
-   MINIMALIST DESIGN SYSTEM
+   KURO-TENBIN DESIGN SYSTEM
+   Japanese-inspired Dark SaaS Aesthetic
    ============================================ */
 
 :root {
-  /* Core Colors - Clean & Neutral */
-  --background: 0 0% 100%;
-  --foreground: 0 0% 15%;
-  --surface: 0 0% 100%;
-  --surface-hover: 0 0% 98%;
-  --surface-muted: 40 6% 97%;
+  /* Deep Obsidian Base */
+  --background: 222 47% 4%;
+  --foreground: 210 40% 98%;
 
-  /* Grays - Subtle & Refined */
-  --gray-50: 0 0% 98%;
-  --gray-100: 0 0% 96%;
-  --gray-200: 0 0% 92%;
-  --gray-300: 0 0% 85%;
-  --gray-400: 0 0% 65%;
-  --gray-500: 0 0% 50%;
-  --gray-600: 0 0% 40%;
-  --gray-700: 0 0% 30%;
-  --gray-800: 0 0% 20%;
-  --gray-900: 0 0% 10%;
+  /* Surface Layers - Glassmorphism */
+  --surface: 222 47% 6%;
+  --surface-elevated: 222 47% 8%;
+  --surface-hover: 222 47% 10%;
+  --surface-muted: 222 30% 12%;
 
-  /* Accents */
-  --primary: 0 0% 15%;
-  --primary-foreground: 0 0% 100%;
-  --accent: 40 6% 97%;
+  /* Digital Mercury Gradient */
+  --primary: 187 92% 43%;
+  --primary-light: 187 92% 53%;
+  --primary-dark: 187 92% 33%;
+  --primary-foreground: 222 47% 4%;
 
-  /* Borders & Rings */
-  --border: 0 0% 92%;
-  --border-hover: 0 0% 85%;
-  --ring: 0 0% 70%;
+  /* Emerald Accent */
+  --accent: 160 84% 39%;
+  --accent-light: 160 84% 49%;
+  --accent-foreground: 222 47% 4%;
+
+  /* Amber Gold for CTAs */
+  --gold: 38 92% 50%;
+  --gold-light: 38 92% 60%;
+  --gold-foreground: 222 47% 4%;
+
+  /* Rose for Danger */
+  --danger: 350 89% 60%;
+  --danger-foreground: 222 47% 4%;
+
+  /* Grays - Slate family */
+  --gray-50: 210 20% 98%;
+  --gray-100: 220 14% 96%;
+  --gray-200: 220 13% 91%;
+  --gray-300: 220 9% 46%;
+  --gray-400: 220 9% 36%;
+  --gray-500: 220 9% 26%;
+  --gray-600: 220 13% 16%;
+  --gray-700: 222 20% 12%;
+  --gray-800: 222 30% 8%;
+  --gray-900: 222 47% 4%;
+
+  /* Borders */
+  --border: 222 30% 15%;
+  --border-hover: 222 30% 20%;
+  --ring: 187 92% 43%;
 
   /* Radius */
-  --radius: 0.5rem;
+  --radius: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
 
-  /* Typography - Unified */
+  /* Typography */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: 'Cal Sans', 'Inter', sans-serif;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
+  --shadow-glow: 0 0 40px -10px hsl(var(--primary) / 0.3);
+  --shadow-glow-gold: 0 0 40px -10px hsl(var(--gold) / 0.3);
 }
 
 /* ============================================
@@ -63,17 +93,76 @@ body {
   margin: 0;
   padding: 0;
   background-color: hsl(var(--background));
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, hsl(var(--primary) / 0.15), transparent),
+    radial-gradient(ellipse 60% 40% at 80% 100%, hsl(var(--accent) / 0.1), transparent);
+  background-attachment: fixed;
   color: hsl(var(--foreground));
   font-family: var(--font-sans);
   font-size: 15px;
   line-height: 1.6;
   text-rendering: optimizeLegibility;
+  min-height: 100vh;
 }
 
 /* Selection */
 ::selection {
-  background-color: hsl(var(--gray-200));
+  background-color: hsl(var(--primary) / 0.3);
   color: hsl(var(--foreground));
+}
+
+/* ============================================
+   GLASSMORPHISM UTILITIES
+   ============================================ */
+
+@layer utilities {
+  .glass {
+    background: hsl(var(--surface) / 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--border));
+  }
+
+  .glass-elevated {
+    background: hsl(var(--surface-elevated) / 0.9);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid hsl(var(--border-hover));
+  }
+
+  .glass-muted {
+    background: hsl(var(--surface-muted) / 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid hsl(var(--border));
+  }
+
+  .glow-primary {
+    box-shadow: var(--shadow-glow);
+  }
+
+  .glow-gold {
+    box-shadow: var(--shadow-glow-gold);
+  }
+
+  .gradient-border {
+    position: relative;
+  }
+
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
 }
 
 /* ============================================
@@ -83,7 +172,7 @@ body {
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-sans);
   font-weight: 600;
-  line-height: 1.3;
+  line-height: 1.2;
   color: hsl(var(--foreground));
   margin: 0;
   letter-spacing: -0.02em;
@@ -104,6 +193,19 @@ p {
 
 input, textarea, select {
   font-family: inherit;
+  background: hsl(var(--surface-muted));
+  border: 1px solid hsl(var(--border));
+  color: hsl(var(--foreground));
+}
+
+input::placeholder, textarea::placeholder {
+  color: hsl(var(--gray-300));
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.2);
 }
 
 /* ============================================
@@ -115,60 +217,60 @@ input, textarea, select {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
+  padding: 0.625rem 1.25rem;
   font-size: 0.875rem;
   font-weight: 500;
   line-height: 1.5;
   border-radius: var(--radius);
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all 0.15s ease;
-  min-height: 2.25rem;
+  transition: all 0.2s ease;
+  min-height: 2.5rem;
   text-decoration: none;
 }
 
 .btn-primary {
-  background-color: hsl(var(--gray-900));
-  color: white;
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-dark)));
+  color: hsl(var(--primary-foreground));
+  border: none;
 }
 
 .btn-primary:hover {
-  background-color: hsl(var(--gray-800));
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-glow);
+}
+
+.btn-gold {
+  background: linear-gradient(135deg, hsl(var(--gold)), hsl(var(--gold-light)));
+  color: hsl(var(--gold-foreground));
+  border: none;
+}
+
+.btn-gold:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-glow-gold);
 }
 
 .btn-secondary {
-  background-color: white;
-  color: hsl(var(--gray-700));
-  border-color: hsl(var(--gray-200));
+  background: hsl(var(--surface-elevated));
+  color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--border));
 }
 
 .btn-secondary:hover {
-  background-color: hsl(var(--gray-50));
-  border-color: hsl(var(--gray-300));
+  background: hsl(var(--surface-hover));
+  border-color: hsl(var(--border-hover));
 }
 
-/* ============================================
-   INPUT STYLES
-   ============================================ */
-
-.input {
-  width: 100%;
-  padding: 0.625rem 0.875rem;
-  font-size: 0.875rem;
-  background: white;
-  border: 1px solid hsl(var(--border));
-  border-radius: var(--radius);
-  transition: all 0.15s ease;
-  outline: none;
+.btn-ghost {
+  background: transparent;
+  color: hsl(var(--gray-200));
+  border: 1px solid transparent;
 }
 
-.input:focus {
-  border-color: hsl(var(--gray-400));
-  box-shadow: 0 0 0 3px hsl(var(--gray-100));
-}
-
-.input::placeholder {
-  color: hsl(var(--gray-400));
+.btn-ghost:hover {
+  background: hsl(var(--surface-muted));
+  color: hsl(var(--foreground));
 }
 
 /* ============================================
@@ -176,14 +278,21 @@ input, textarea, select {
    ============================================ */
 
 .card {
-  background: white;
+  background: hsl(var(--surface) / 0.8);
+  backdrop-filter: blur(12px);
   border: 1px solid hsl(var(--border));
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   transition: all 0.2s ease;
 }
 
 .card:hover {
   border-color: hsl(var(--border-hover));
+  transform: translateY(-2px);
+}
+
+.card-elevated {
+  background: hsl(var(--surface-elevated) / 0.9);
+  box-shadow: var(--shadow-lg);
 }
 
 /* ============================================
@@ -191,28 +300,28 @@ input, textarea, select {
    ============================================ */
 
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(var(--gray-100));
-  border-radius: 3px;
+  background: hsl(var(--gray-800));
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--gray-300));
-  border-radius: 3px;
+  background: hsl(var(--gray-600));
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--gray-400));
+  background: hsl(var(--gray-500));
 }
 
 /* Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: hsl(var(--gray-300)) hsl(var(--gray-100));
+  scrollbar-color: hsl(var(--gray-600)) hsl(var(--gray-800));
 }
 
 /* ============================================
@@ -220,7 +329,7 @@ input, textarea, select {
    ============================================ */
 
 :focus-visible {
-  outline: 2px solid hsl(var(--gray-400));
+  outline: 2px solid hsl(var(--primary));
   outline-offset: 2px;
 }
 
@@ -249,6 +358,21 @@ input, textarea, select {
   white-space: nowrap;
 }
 
+/* Text gradients */
+.text-gradient {
+  background: linear-gradient(135deg, hsl(var(--primary-light)), hsl(var(--accent-light)));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-gold {
+  background: linear-gradient(135deg, hsl(var(--gold)), hsl(var(--gold-light)));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 /* ============================================
    ANIMATIONS
    ============================================ */
@@ -260,7 +384,7 @@ input, textarea, select {
 
 @keyframes slideUp {
   from {
-    transform: translateY(10px);
+    transform: translateY(20px);
     opacity: 0;
   }
   to {
@@ -269,10 +393,135 @@ input, textarea, select {
   }
 }
 
+@keyframes slideInRight {
+  from {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px -5px hsl(var(--primary) / 0.4);
+  }
+  50% {
+    box-shadow: 0 0 40px -5px hsl(var(--primary) / 0.6);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
 .animate-fade-in {
-  animation: fadeIn 0.2s ease;
+  animation: fadeIn 0.4s ease;
 }
 
 .animate-slide-up {
-  animation: slideUp 0.3s ease;
+  animation: slideUp 0.4s ease;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.4s ease;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* ============================================
+   BENTO GRID
+   ============================================ */
+
+.bento-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(1, 1fr);
+}
+
+@media (min-width: 640px) {
+  .bento-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .bento-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.bento-item-large {
+  grid-column: span 1;
+  grid-row: span 1;
+}
+
+@media (min-width: 1024px) {
+  .bento-item-large {
+    grid-column: span 2;
+    grid-row: span 2;
+  }
+}
+
+.bento-item-wide {
+  grid-column: span 1;
+}
+
+@media (min-width: 1024px) {
+  .bento-item-wide {
+    grid-column: span 2;
+  }
+}
+
+/* ============================================
+   STEPPER
+   ============================================ */
+
+.stepper-line {
+  background: linear-gradient(90deg,
+    hsl(var(--primary)) 0%,
+    hsl(var(--accent)) 100%
+  );
+}
+
+/* ============================================
+   BADGES & TAGS
+   ============================================ */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 9999px;
+  background: hsl(var(--surface-muted));
+  border: 1px solid hsl(var(--border));
+}
+
+.badge-primary {
+  background: hsl(var(--primary) / 0.2);
+  border-color: hsl(var(--primary) / 0.3);
+  color: hsl(var(--primary-light));
+}
+
+.badge-accent {
+  background: hsl(var(--accent) / 0.2);
+  border-color: hsl(var(--accent) / 0.3);
+  color: hsl(var(--accent-light));
+}
+
+.badge-gold {
+  background: hsl(var(--gold) / 0.2);
+  border-color: hsl(var(--gold) / 0.3);
+  color: hsl(var(--gold-light));
 }

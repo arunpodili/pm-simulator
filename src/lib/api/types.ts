@@ -284,9 +284,33 @@ export interface ApiError {
 }
 
 export interface StreamingEvent {
-  type: 'progress' | 'insight' | 'complete' | 'error';
+  type: 'progress' | 'insight' | 'agent_activity' | 'complete' | 'error';
   data: unknown;
   timestamp: string;
+}
+
+// Persona Builder Types
+export interface Persona {
+  id: string;
+  name: string;
+  role: string;
+  pain_level: number;
+  tech_savviness: number;
+  goals?: string;
+  description?: string;
+  type?: 'ENTHUSIAST' | 'PRAGMATIST' | 'SKEPTIC' | 'LAGGARD';
+}
+
+// 3D Agent Network Types
+export interface AgentState {
+  id: string;
+  x: number;
+  y: number;
+  z?: number;
+  state: 'unaware' | 'aware' | 'signed_up' | 'active' | 'engaged' | 'churned' | 'advocate' | 'converted';
+  type?: string;
+  personaType?: string;
+  influence?: number;
 }
 
 // 3D Graph Types
