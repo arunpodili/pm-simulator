@@ -13,6 +13,7 @@ interface AgentNodeProps {
   };
   isSelected?: boolean;
   onClick?: () => void;
+  simplified?: boolean;
 }
 
 const stateColors: Record<string, string> = {
@@ -35,7 +36,7 @@ const stateAnimations: Record<string, string> = {
   advocate: 'emit',
 };
 
-export function AgentNode({ agent, isSelected, onClick }: AgentNodeProps) {
+export function AgentNode({ agent, isSelected, onClick, simplified }: AgentNodeProps) {
   const color = stateColors[agent.state] || '#9CA3AF';
   const animation = stateAnimations[agent.state] || 'none';
 

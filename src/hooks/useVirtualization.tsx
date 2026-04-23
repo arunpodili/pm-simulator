@@ -10,6 +10,7 @@ interface VirtualizationResult {
   virtualItems: Array<{ index: number; style: React.CSSProperties }>;
   totalHeight: number;
   scrollToIndex: (index: number) => void;
+  containerRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export function useVirtualization(
@@ -76,6 +77,7 @@ export function useVirtualization(
     virtualItems,
     totalHeight,
     scrollToIndex,
+    containerRef,
   };
 }
 

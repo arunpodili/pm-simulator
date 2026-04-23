@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 
-interface AgentNode {
+interface AgentNode extends d3.SimulationNodeDatum {
   id: string;
   name: string;
   persona: string;
@@ -12,9 +12,7 @@ interface AgentNode {
   group: number;
 }
 
-interface AgentLink {
-  source: string;
-  target: string;
+interface AgentLink extends d3.SimulationLinkDatum<AgentNode> {
   influence: number;
   type: "social" | "debate";
 }
@@ -89,12 +87,12 @@ export function AgentGraph({
 
     // Create force simulation
     const simulation = d3
-      .forceSimulation(nodes)
+      .forceSimulation<AgentNode>(nodes)
       .force(
         "link",
         d3
-          .forceLink<AgentNode, d3.SimulationNodeDatum>(links)
-          .id((d: any) => d.id)
+          .forceLink<AgentNode, AgentLink>(links)
+          .id((d) => d.id)
           .distance(100)
       )
       .force("charge", d3.forceManyBody().strength(-300))

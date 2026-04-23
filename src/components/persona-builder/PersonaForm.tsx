@@ -59,8 +59,8 @@ export function PersonaForm({ isOpen, onClose, onSubmit, initialData }: PersonaF
           <div>
             <Label>Pain Level: {formData.pain_level}</Label>
             <Slider
-              value={[formData.pain_level]}
-              onValueChange={([v]) => setFormData({ ...formData, pain_level: v })}
+              value={formData.pain_level}
+              onChange={(v) => setFormData({ ...formData, pain_level: v })}
               min={1}
               max={10}
               step={1}
@@ -69,8 +69,8 @@ export function PersonaForm({ isOpen, onClose, onSubmit, initialData }: PersonaF
           <div>
             <Label>Tech Savviness: {formData.tech_savviness}</Label>
             <Slider
-              value={[formData.tech_savviness]}
-              onValueChange={([v]) => setFormData({ ...formData, tech_savviness: v })}
+              value={formData.tech_savviness}
+              onChange={(v) => setFormData({ ...formData, tech_savviness: v })}
               min={1}
               max={10}
               step={1}
@@ -86,7 +86,7 @@ export function PersonaForm({ isOpen, onClose, onSubmit, initialData }: PersonaF
             />
           </div>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="secondary" onClick={onClose}>
               Cancel
             </Button>
             <Button type="submit">

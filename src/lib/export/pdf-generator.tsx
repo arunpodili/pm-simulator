@@ -130,6 +130,12 @@ interface ReportData {
   simulation: SimulationData;
   personas: PersonaData[];
   structuredData?: Record<string, any>;
+  result?: {
+    conversion_rate: number;
+    churn_rate: number;
+    nps: number;
+    clv: number;
+  };
 }
 
 // Cover Page Component
@@ -222,7 +228,7 @@ const ReportDocument = ({ simulation, personas, structuredData }: ReportData) =>
 interface PDFGeneratorProps {
   data: ReportData;
   filename?: string;
-  children: React.ReactNode;
+  children: (props: { loading: boolean }) => React.ReactNode;
 }
 
 export function PDFGenerator({ data, filename, children }: PDFGeneratorProps) {

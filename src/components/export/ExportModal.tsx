@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Progress } from '@/components/ui/Progress';
 import { FormatSelector, ExportFormat } from './FormatSelector';
 import { useExport } from '@/hooks/useExport';
+import { PDFGenerator, ReportData } from '@/lib/export';
 import { FileText, CheckCircle, AlertCircle, ExternalLink, Loader2 } from 'lucide-react';
 
 interface ExportModalProps {
@@ -93,7 +94,7 @@ export function ExportModal({ isOpen, onClose, data }: ExportModalProps) {
             )}
 
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={handleClose}>
+              <Button variant="secondary" onClick={handleClose}>
                 Cancel
               </Button>
               <Button onClick={handleExport} disabled={!selectedFormat}>
@@ -156,7 +157,7 @@ export function ExportModal({ isOpen, onClose, data }: ExportModalProps) {
             <p className="text-center text-lg font-medium text-red-600">Export Failed</p>
             <p className="text-center text-sm text-gray-600">{error}</p>
             <div className="flex justify-center gap-2">
-              <Button variant="outline" onClick={handleClose}>
+              <Button variant="secondary" onClick={handleClose}>
                 Close
               </Button>
               <Button onClick={reset}>Try Again</Button>

@@ -217,6 +217,7 @@ export interface SimulationConfig {
   price_point: string;
   key_features?: string;
   competitors?: string;
+  personas?: string[]; // Persona IDs to include in simulation
 }
 
 export interface SimulationResult {

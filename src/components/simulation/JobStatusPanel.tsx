@@ -10,7 +10,7 @@ import {
   CheckCircle,
   AlertCircle,
   Loader2,
-  Queue,
+  ListTodo,
   MoreHorizontal,
 } from 'lucide-react';
 
@@ -109,7 +109,7 @@ export function JobStatusPanel({ taskId, onComplete, onError }: JobStatusPanelPr
   const getStatusIcon = () => {
     switch (status?.status) {
       case 'PENDING':
-        return <Queue className="w-5 h-5 text-gray-500" />;
+        return <ListTodo className="w-5 h-5 text-gray-500" />;
       case 'PROGRESS':
         return <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />;
       case 'SUCCESS':

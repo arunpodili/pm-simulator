@@ -7,12 +7,14 @@ interface CardProps {
   children: React.ReactNode;
   className?: string;
   variant?: 'default' | 'bordered' | 'elevated';
+  onClick?: () => void;
 }
 
 export const Card: React.FC<CardProps> = ({
   children,
   className,
-  variant = 'default'
+  variant = 'default',
+  onClick
 }) => {
   const variants = {
     default: 'bg-white border border-gray-200',
@@ -21,11 +23,17 @@ export const Card: React.FC<CardProps> = ({
   };
 
   return (
-    <div className={cn(
-      'rounded-sm transition-shadow duration-200',
-      variants[variant],
-      className
-    )}>
+    <div
+      className={cn(
+        'rounded-sm transition-shadow duration-200',
+        variants[variant],
+        className
+      )}
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') onClick(); } : undefined}
+    >
       {children}
     </div>
   );

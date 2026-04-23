@@ -29,14 +29,38 @@ import { SimulationResults } from '@/components/simulation-wizard/SimulationResu
 import { simulationsApi } from '@/lib/api/client';
 import { SimulationConfig, Persona } from '@/lib/api/types';
 
-const steps = [
+// Define types for steps and templates
+interface Step {
+  id: string;
+  label: string;
+  icon: typeof Target;
+}
+
+interface Template {
+  id: string;
+  name: string;
+  description: string;
+  icon: typeof Zap;
+  color: string;
+  defaultConfig: {
+    product_name: string;
+    product_description: string;
+    target_market: string;
+    pricing_model: 'freemium' | 'subscription' | 'one-time' | 'usage-based';
+    price_point: string;
+    key_features: string;
+    competitors: string;
+  };
+}
+
+const steps: Step[] = [
   { id: 'templates', label: 'Choose Template', icon: Target },
   { id: 'persona', label: 'AI Personas', icon: Users },
   { id: 'simulate', label: 'Simulate', icon: Play },
   { id: 'results', label: 'Results', icon: BarChart3 },
 ];
 
-const templates = [
+const templates: Template[] = [
   {
     id: 'saas_launch',
     name: 'SaaS Feature Launch',
@@ -333,7 +357,7 @@ export default function SimulatePage() {
   );
 }
 
-function Stepper({ steps, currentStep }: { steps: typeof steps; currentStep: number }) {
+function Stepper({ steps, currentStep }: { steps: Step[]; currentStep: number }) {
   return (
     <div className="flex items-center justify-center">
       <div className="flex items-center gap-2 sm:gap-4">
@@ -393,7 +417,7 @@ function TemplateStep({
   config,
   onConfigUpdate,
 }: {
-  templates: typeof templates;
+  templates: Template[];
   selectedTemplate: string | null;
   onSelect: (id: string) => void;
   config: SimulationConfig | null;

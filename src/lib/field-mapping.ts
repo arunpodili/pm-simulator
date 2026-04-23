@@ -132,7 +132,7 @@ export function extractHints(text: string, fieldType: keyof UserBrief): FieldHin
           text: '💰 Low price point - high conversion expected',
           confidence: 0.75,
           type: 'suggestion',
-        }));
+        });
       } else if (price > 100) {
         hints.push({
           field: 'price_sensitivity',

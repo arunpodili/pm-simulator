@@ -176,8 +176,7 @@ export function ValidationPanel({ validation }: ValidationPanelProps) {
                 </span>
               </div>
 
-              <div className="flex items-center gap-2 text-sm"
-003e
+              <div className="flex items-center gap-2 text-sm">
                 <span className="text-gray-500">Deviation:</span>
                 <span className={`font-mono font-medium flex items-center gap-1 ${getZScoreColor(metric.z_score)}`}>
                   {metric.z_score > 0 ? (

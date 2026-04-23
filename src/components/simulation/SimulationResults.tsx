@@ -312,8 +312,8 @@ export function SimulationResults({
                   <XAxis dataKey="day" label={{ value: "Days", position: "insideBottom", offset: -5 }} />
                   <YAxis label={{ value: "Users", angle: -90, position: "insideLeft" }} />
                   <Tooltip
-                    formatter={(value: number) => [
-                      `${value.toLocaleString()} users`,
+                    formatter={(value: any) => [
+                      `${Number(value).toLocaleString()} users`,
                       "Adoption",
                     ]}
                     labelFormatter={(label) => `Day ${label}`}

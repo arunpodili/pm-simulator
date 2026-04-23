@@ -99,7 +99,7 @@ export default function HomePage() {
   ];
 
   // Animation transition config
-  const transition = { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] };
+  const transition = { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] as const };
 
   return (
     <div className="min-h-screen">

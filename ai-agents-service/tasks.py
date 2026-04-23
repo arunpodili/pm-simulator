@@ -315,20 +315,29 @@ def cleanup_old_simulations(self, days: int = 7):
 
 # Task event handlers
 @task_prerun.connect
-def task_prerun_handler(task_id, task, args, kwargs):
+def task_prerun_handler(**kwargs):
     """Handle task start."""
-    print(f"Task {task.name}[{task_id}] started")
+    task = kwargs.get('task')
+    task_id = kwargs.get('task_id')
+    if task and task_id:
+        print(f"Task {task.name}[{task_id}] started")
 
 
 @task_postrun.connect
-def task_postrun_handler(task_id, task, args, kwargs, retval, state):
+def task_postrun_handler(**kwargs):
     """Handle task completion."""
-    print(f"Task {task.name}[{task_id}] finished with state {state}")
+    task = kwargs.get('task')
+    task_id = kwargs.get('task_id')
+    state = kwargs.get('state')
+    if task and task_id:
+        print(f"Task {task.name}[{task_id}] finished with state {state}")
 
 
 @task_failure.connect
-def task_failure_handler(task_id, exception, args, kwargs, traceback, einfo):
+def task_failure_handler(**kwargs):
     """Handle task failure."""
+    task_id = kwargs.get('task_id')
+    exception = kwargs.get('exception')
     print(f"Task [{task_id}] failed: {exception}")
 
 

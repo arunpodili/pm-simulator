@@ -6,19 +6,23 @@ import { Sprite, SpriteMaterial } from "three";
 import { GraphNode, GraphLink } from "@/lib/api/types";
 import { getStateLabel, getArchetypeInfo } from "@/lib/api/ruleBasedSimulation";
 
+// Type assertion for ForceGraph3D to work with JSX
+const ForceGraph3DComponent = ForceGraph3D as unknown as React.ComponentType<any>;
+
 interface Agent3DGraphProps {
-  nodes: GraphNode[];
-  links: GraphLink[];
+  nodes?: GraphNode[];
+  links?: GraphLink[];
   width?: number;
   height?: number;
   onAgentSelect?: (agent: GraphNode) => void;
   onAgentHover?: (agent: GraphNode | null) => void;
   selectedAgentId?: string | null;
+  agentReasoning?: any;
 }
 
 export function Agent3DGraph({
-  nodes,
-  links,
+  nodes = [],
+  links = [],
   width = 800,
   height = 600,
   onAgentSelect,
@@ -32,11 +36,9 @@ export function Agent3DGraph({
   // Transform data into graph format
   const graphData = useMemo(() => {
     const processedNodes = nodes.map((node) => ({
-      id: node.id,
-      name: node.name,
+      ...node,
       val: node.val || Math.max(3, (node.agent?.engagement_level || 5) * 0.6),
       color: getNodeColor(node),
-      ...node,
     }));
 
     const processedLinks = links.map((link) => ({
@@ -176,7 +178,7 @@ export function Agent3DGraph({
 
   return (
     <div className="relative">
-      <ForceGraph3D
+      <ForceGraph3DComponent
         ref={fgRef}
         graphData={graphData}
         width={width}

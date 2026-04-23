@@ -19,11 +19,11 @@ import {
   Network,
   Copy,
   Check,
+  Box,
 } from "lucide-react";
 import { AgentGraph } from "./AgentGraph";
 import { Agent3DGraph } from "./Agent3DGraph";
 import { AgentDetailPanel } from "./AgentDetailPanel";
-import { Cube } from "lucide-react";
 
 interface LLMSimulationResultsProps {
   data: any;
@@ -236,7 +236,7 @@ export function LLMSimulationResults({ data, onNewSimulation }: LLMSimulationRes
             }`}
           >
             <div className="flex items-center gap-1">
-              <Cube className="w-4 h-4" />
+              <Box className="w-4 h-4" />
               3D Network
             </div>
             {activeTab === "3d-network" && (
@@ -586,7 +586,7 @@ export function LLMSimulationResults({ data, onNewSimulation }: LLMSimulationRes
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-xl font-semibold flex items-center gap-2">
-                  <Cube className="w-5 h-5 text-purple-600" />
+                  <Box className="w-5 h-5 text-purple-600" />
                   3D Agent Network
                 </h2>
                 <p className="text-gray-600 mt-1">

@@ -21,9 +21,9 @@ export function TimelineScrubber({
 }: TimelineScrubberProps) {
   const progress = (currentDay / totalDays) * 100;
 
-  const handleSliderChange = (value: number[]) => {
+  const handleSliderChange = (value: number) => {
     if (onChange) {
-      onChange(Math.round((value[0] / 100) * totalDays));
+      onChange(Math.round((value / 100) * totalDays));
     }
   };
 
@@ -81,11 +81,10 @@ export function TimelineScrubber({
         {/* Timeline */}
         <div className="flex-1">
           <Slider
-            value={[progress]}
-            onValueChange={handleSliderChange}
+            value={progress}
+            onChange={handleSliderChange}
+            min={0}
             max={100}
-            step={0.1}
-            className="w-full"
           />
         </div>
 

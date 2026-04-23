@@ -102,9 +102,8 @@ if CLEANUP_AVAILABLE:
     init_cleanup(app, active_simulations, simulation_results)
     logger.info("Cleanup manager initialized")
 
-# Initialize streaming module (with auth wrapper)
+# Initialize streaming module
 init_streaming(app, SimulationEngine(), {})
-app.register_blueprint(streaming_bp)
 
 # Register v2 API blueprints
 from api_v2 import simulations as sim_v2

@@ -9,8 +9,8 @@ interface ExportButtonProps {
   simulation: any;
   personas: any[];
   structuredData?: any;
-  variant?: 'default' | 'outline' | 'ghost';
-  size?: 'default' | 'sm' | 'lg';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'gold';
+  size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
 
@@ -18,8 +18,8 @@ export function ExportButton({
   simulation,
   personas,
   structuredData,
-  variant = 'outline',
-  size = 'default',
+  variant = 'secondary',
+  size = 'md',
   className,
 }: ExportButtonProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);

@@ -65,7 +65,7 @@ export function SimulationResults({
     metrics.total_signups || 10000
   );
 
-  const insights = results?.insights || [
+  const insights: Array<{ title: string; description: string; type: 'positive' | 'warning' | 'negative' }> = results?.insights || [
     {
       title: 'Strong Product-Market Fit',
       description: 'High conversion rates indicate strong resonance with target personas',

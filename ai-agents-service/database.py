@@ -264,6 +264,32 @@ class DatabaseManager:
 db_manager = DatabaseManager()
 
 
+class DBSession:
+    """Proxy class that provides session-like interface to db_manager."""
+
+    def query(self, *args, **kwargs):
+        return self._get_session().query(*args, **kwargs)
+
+    def add(self, *args, **kwargs):
+        return self._get_session().add(*args, **kwargs)
+
+    def commit(self, *args, **kwargs):
+        return self._get_session().commit(*args, **kwargs)
+
+    def rollback(self, *args, **kwargs):
+        return self._get_session().rollback(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        return self._get_session().delete(*args, **kwargs)
+
+    def _get_session(self):
+        return db_manager.get_session()
+
+
+# Global session proxy for convenience
+db_session = DBSession()
+
+
 def get_db_session():
     """Get database session context manager."""
     session = db_manager.get_session()

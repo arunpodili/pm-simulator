@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 const TabsContext = createContext<{
   activeTab: string;
   setActiveTab: (value: string) => void;
-}> | null>(null);
+} | null>(null);
 
 export const Tabs: React.FC<{
   defaultValue: string;

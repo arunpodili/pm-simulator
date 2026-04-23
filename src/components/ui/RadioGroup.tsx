@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 const RadioGroupContext = createContext<{
   value: string;
   onChange: (value: string) => void;
-}> | null>(null);
+} | null>(null);
 
 interface RadioGroupProps {
   value: string;

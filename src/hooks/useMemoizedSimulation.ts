@@ -1,8 +1,8 @@
-"""
-Optimized Simulation Hooks with Memoization
-
-Provides performance-optimized hooks for simulation data.
-"""
+/**
+ * Optimized Simulation Hooks with Memoization
+ *
+ * Provides performance-optimized hooks for simulation data.
+ */
 
 import { useMemo, useCallback, useRef, useEffect, useState } from 'react';
 
@@ -155,7 +155,7 @@ export function useCachedAPI<T>(
  */
 export function useDebouncedValue<T>(value: T, delay: number = 300): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   useEffect(() => {
     if (timeoutRef.current) {
@@ -195,50 +195,4 @@ export function useThrottledCallback<T extends (...args: any[]) => any>(
       callbackRef.current(...args);
     }
   }, [delay]) as T;
-}
-
-/**
- * Hook for virtualized list (large data sets)
- */
-export function useVirtualization<T>(
-  items: T[],
-  itemHeight: number,
-  containerHeight: number,
-  overscan: number = 5
-) {
-  const [scrollTop, setScrollTop] = useState(0);
-
-  const { virtualItems, totalHeight, startIndex, endIndex } = useMemo(() => {
-    const totalHeight = items.length * itemHeight;
-    const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
-    const visibleCount = Math.ceil(containerHeight / itemHeight);
-    const endIndex = Math.min(items.length, startIndex + visibleCount + overscan * 2);
-
-    const virtualItems = items.slice(startIndex, endIndex).map((item, index) => ({
-      item,
-      index: startIndex + index,
-      style: {
-        position: 'absolute' as const,
-        top: (startIndex + index) * itemHeight,
-        height: itemHeight,
-        left: 0,
-        right: 0
-      }
-    }));
-
-    return { virtualItems, totalHeight, startIndex, endIndex };
-  }, [items, itemHeight, containerHeight, scrollTop, overscan]);
-
-  const onScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    setScrollTop(e.currentTarget.scrollTop);
-  }, []);
-
-  return {
-    virtualItems,
-    totalHeight,
-    startIndex,
-    endIndex,
-    onScroll,
-    containerStyle: { position: 'relative' as const, height: containerHeight, overflow: 'auto' }
-  };
 }

@@ -153,19 +153,19 @@ export async function generateDocx(data: ReportData): Promise<Blob> {
               new TableRow({
                 children: [
                   new TableCell({
-                    children: [new Paragraph({ text: 'Name', bold: true })],
+                    children: [new Paragraph({ children: [new TextRun({ text: 'Name', bold: true })] })],
                     shading: { fill: 'F5F5F5' },
                   }),
                   new TableCell({
-                    children: [new Paragraph({ text: 'Role', bold: true })],
+                    children: [new Paragraph({ children: [new TextRun({ text: 'Role', bold: true })] })],
                     shading: { fill: 'F5F5F5' },
                   }),
                   new TableCell({
-                    children: [new Paragraph({ text: 'Pain Level', bold: true })],
+                    children: [new Paragraph({ children: [new TextRun({ text: 'Pain Level', bold: true })] })],
                     shading: { fill: 'F5F5F5' },
                   }),
                   new TableCell({
-                    children: [new Paragraph({ text: 'Tech Savviness', bold: true })],
+                    children: [new Paragraph({ children: [new TextRun({ text: 'Tech Savviness', bold: true })] })],
                     shading: { fill: 'F5F5F5' },
                   }),
                 ],

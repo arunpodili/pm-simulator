@@ -1,6 +1,6 @@
-"""
-React Hook for WebSocket Connection
-"""
+/**
+ * React Hook for WebSocket Connection
+ */
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 
