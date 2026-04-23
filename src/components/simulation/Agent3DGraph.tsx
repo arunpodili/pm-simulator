@@ -23,34 +23,131 @@ interface Agent3DGraphProps {
 export function Agent3DGraph({
   nodes = [],
   links = [],
-  width = 800,
-  height = 600,
+  width,
+  height,
   onAgentSelect,
   onAgentHover,
   selectedAgentId,
+  agentReasoning,
 }: Agent3DGraphProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const fgRef = useRef<any>(null);
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const [dimensions, setDimensions] = useState({ width: width || 800, height: height || 500 });
+  const [hasError, setHasError] = useState(false);
 
-  // Transform data into graph format
-  const graphData = useMemo(() => {
-    const processedNodes = nodes.map((node) => ({
-      ...node,
-      val: node.val || Math.max(3, (node.agent?.engagement_level || 5) * 0.6),
-      color: getNodeColor(node),
-    }));
+  // Ensure we're on client side
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
-    const processedLinks = links.map((link) => ({
-      source: typeof link.source === 'string' ? link.source : link.source.id,
-      target: typeof link.target === 'string' ? link.target : link.target.id,
-      value: link.value || 0.5,
-    }));
+  // Update dimensions on container resize
+  useEffect(() => {
+    if (!containerRef.current) return;
 
-    return { nodes: processedNodes, links: processedLinks };
-  }, [nodes, links]);
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          setDimensions({
+            width: width || rect.width,
+            height: height || rect.height,
+          });
+        }
+      }
+    };
+
+    updateDimensions();
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const newWidth = width || entry.contentRect.width;
+        const newHeight = height || entry.contentRect.height || 400;
+        setDimensions({
+          width: newWidth,
+          height: newHeight,
+        });
+      }
+    });
+
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [width, height]);
+
+  // Transform agentReasoning into nodes if nodes not provided
+  const transformedNodes: GraphNode[] = useMemo(() => {
+    if (nodes.length > 0) return nodes;
+    if (!agentReasoning || agentReasoning.length === 0) return [];
+
+    return agentReasoning.map((agent: any, idx: number): GraphNode => {
+      // Generate 3D positions in a sphere distribution
+      const phi = Math.acos(-1 + (2 * idx) / agentReasoning.length);
+      const theta = Math.sqrt(agentReasoning.length * Math.PI) * phi;
+      const radius = 200 + Math.random() * 100;
+
+      const state = agent.position === 'support' ? 'engaged' :
+                    agent.position === 'oppose' ? 'churned' : 'aware';
+
+      return {
+        id: agent.id || `agent-${idx}`,
+        name: agent.name || `Agent ${idx + 1}`,
+        val: Math.max(3, (agent.confidence || 0.5) * 10),
+        x: radius * Math.cos(theta) * Math.sin(phi),
+        y: radius * Math.sin(theta) * Math.sin(phi),
+        z: radius * Math.cos(phi),
+        color: getNodeColorForState(state),
+        agent: {
+          id: agent.id || `agent-${idx}`,
+          name: agent.name || `Agent ${idx + 1}`,
+          current_state: state,
+          satisfaction_score: (agent.confidence || 0.5) * 10,
+          engagement_level: (agent.confidence || 0.5) * 10,
+          behavioral: {
+            archetype: agent.reasoning?.includes('Innovator') ? 'INNOVATOR' :
+                       agent.reasoning?.includes('Early') ? 'EARLY_ADOPTER' : 'EARLY_MAJORITY',
+          },
+        } as any,
+      };
+    });
+  }, [nodes, agentReasoning]);
+
+  // Generate links from influencedBy relationships
+  const transformedLinks = useMemo(() => {
+    if (links.length > 0) return links;
+    if (!agentReasoning || agentReasoning.length === 0) return [];
+
+    const newLinks: any[] = [];
+    agentReasoning.forEach((agent: any) => {
+      if (agent.influencedBy && Array.isArray(agent.influencedBy)) {
+        agent.influencedBy.forEach((sourceId: string) => {
+          newLinks.push({
+            source: sourceId,
+            target: agent.id,
+            value: 0.5 + Math.random() * 0.3,
+          });
+        });
+      }
+    });
+    return newLinks;
+  }, [links, agentReasoning]);
 
   // Get color based on agent state
+  function getNodeColorForState(state: string): string {
+    const stateColors: Record<string, string> = {
+      unaware: '#9CA3AF',
+      aware: '#3B82F6',
+      signed_up: '#8B5CF6',
+      active: '#F59E0B',
+      engaged: '#10B981',
+      premium: '#059669',
+      churned: '#EF4444',
+    };
+    return stateColors[state] || '#9CA3AF';
+  }
+
+  // Get color based on agent state (with selection support)
   function getNodeColor(node: GraphNode): string {
     // Highlight selected node
     if (selectedAgentId && node.id === selectedAgentId) {
@@ -71,10 +168,27 @@ export function Agent3DGraph({
       : node.color || '#9CA3AF';
   }
 
+  // Transform data into graph format
+  const graphData = useMemo(() => {
+    const processedNodes = transformedNodes.map((node: GraphNode) => ({
+      ...node,
+      val: node.val || Math.max(3, (node.agent?.engagement_level || 5) * 0.6),
+      color: getNodeColor(node),
+    }));
+
+    const processedLinks = transformedLinks.map((link: any) => ({
+      source: typeof link.source === 'string' ? link.source : link.source.id,
+      target: typeof link.target === 'string' ? link.target : link.target.id,
+      value: link.value || 0.5,
+    }));
+
+    return { nodes: processedNodes, links: processedLinks };
+  }, [transformedNodes, transformedLinks, selectedAgentId]);
+
   // Handle node click
   const handleNodeClick = useCallback(
     (node: any) => {
-      const graphNode = nodes.find((n) => n.id === node.id);
+      const graphNode = transformedNodes.find((n) => n.id === node.id);
       if (graphNode && onAgentSelect) {
         onAgentSelect(graphNode);
       }
@@ -90,24 +204,25 @@ export function Agent3DGraph({
         );
       }
     },
-    [nodes, onAgentSelect]
+    [transformedNodes, onAgentSelect]
   );
 
   // Handle node hover
   const handleNodeHover = useCallback(
     (node: any) => {
-      const graphNode = node ? nodes.find((n) => n.id === node.id) || null : null;
+      const graphNode = node ? transformedNodes.find((n) => n.id === node.id) || null : null;
       setHoveredNode(graphNode);
       if (onAgentHover) {
         onAgentHover(graphNode);
       }
     },
-    [nodes, onAgentHover]
+    [transformedNodes, onAgentHover]
   );
 
   // Custom 3D object for nodes
   const nodeThreeObject = useCallback((node: any) => {
-    const color = node.color || getNodeColor(node);
+    // Use pre-computed color from node data, or fallback
+    const color = node.color || '#9CA3AF';
     const sprite = new Sprite(
       new SpriteMaterial({
         color: color,
@@ -120,16 +235,31 @@ export function Agent3DGraph({
     const scale = (node.val || 4) * 1.5;
     sprite.scale.set(scale, scale, 1);
     return sprite;
+  }, [selectedAgentId]);
+
+  // Check WebGL support on mount
+  useEffect(() => {
+    try {
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      if (!gl) {
+        console.error('WebGL not supported');
+        setHasError(true);
+      }
+    } catch (e) {
+      console.error('WebGL check failed:', e);
+      setHasError(true);
+    }
   }, []);
 
   // Initialize graph
   useEffect(() => {
-    if (fgRef.current && !isInitialized && nodes.length > 0) {
+    if (fgRef.current && !isInitialized && transformedNodes.length > 0) {
       // Initial camera position
       fgRef.current.cameraPosition({ x: 0, y: 0, z: 400 });
       setIsInitialized(true);
     }
-  }, [nodes.length, isInitialized]);
+  }, [transformedNodes.length, isInitialized]);
 
   // Auto-rotate
   useEffect(() => {
@@ -149,11 +279,41 @@ export function Agent3DGraph({
     return () => clearInterval(interval);
   }, [hoveredNode]);
 
-  if (!nodes || nodes.length === 0) {
+  if (!isMounted) {
+    return (
+      <div
+        ref={containerRef}
+        className="flex items-center justify-center bg-gray-900 rounded-xl"
+        style={{ width: dimensions.width, height: dimensions.height, minHeight: 400 }}
+      >
+        <div className="text-center text-gray-400">
+          <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-2" />
+          <div className="text-sm">Loading 3D visualization...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (hasError) {
     return (
       <div
         className="flex items-center justify-center bg-gray-900 rounded-xl"
-        style={{ width, height }}
+        style={{ width: dimensions.width, height: dimensions.height }}
+      >
+        <div className="text-center text-gray-400">
+          <div className="text-lg mb-2 text-red-400">3D Visualization Error</div>
+          <div className="text-sm">WebGL may not be supported. Try a different browser.</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!transformedNodes || transformedNodes.length === 0) {
+    return (
+      <div
+        ref={containerRef}
+        className="flex items-center justify-center bg-gray-900 rounded-xl"
+        style={{ width: dimensions.width, height: dimensions.height, minHeight: 400 }}
       >
         <div className="text-center text-gray-400">
           <div className="text-lg mb-2">No Agent Data Available</div>
@@ -165,24 +325,32 @@ export function Agent3DGraph({
 
   // Calculate stats
   const stats = useMemo(() => {
-    const totalAgents = nodes.length;
+    const totalAgents = transformedNodes.length;
     const stateCounts: Record<string, number> = {};
 
-    nodes.forEach((node) => {
+    transformedNodes.forEach((node) => {
       const state = node.agent?.current_state || 'unknown';
       stateCounts[state] = (stateCounts[state] || 0) + 1;
     });
 
     return { totalAgents, stateCounts };
-  }, [nodes]);
+  }, [transformedNodes]);
+
+  console.log('Agent3DGraph render:', {
+    isMounted,
+    hasError,
+    nodeCount: transformedNodes.length,
+    linkCount: transformedLinks.length,
+    dimensions,
+  });
 
   return (
-    <div className="relative">
+    <div ref={containerRef} className="relative w-full h-full min-h-[400px]">
       <ForceGraph3DComponent
         ref={fgRef}
         graphData={graphData}
-        width={width}
-        height={height}
+        width={dimensions.width}
+        height={dimensions.height}
         backgroundColor="#111827"
         nodeLabel={(node: any) => {
           const graphNode = node as GraphNode;

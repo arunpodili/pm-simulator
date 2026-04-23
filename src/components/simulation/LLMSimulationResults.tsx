@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   TrendingUp,
   TrendingDown,
@@ -24,6 +24,7 @@ import {
 import { AgentGraph } from "./AgentGraph";
 import { Agent3DGraph } from "./Agent3DGraph";
 import { AgentDetailPanel } from "./AgentDetailPanel";
+import { ExportModal } from "@/components/export/ExportModal";
 
 interface LLMSimulationResultsProps {
   data: any;
@@ -35,6 +36,7 @@ export function LLMSimulationResults({ data, onNewSimulation }: LLMSimulationRes
   const [selectedAgent, setSelectedAgent] = useState<any>(null);
   const [expandedPersona, setExpandedPersona] = useState<string | null>(null);
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
+  const [showExportModal, setShowExportModal] = useState(false);
 
   const copyToClipboard = async (text: string, sectionId: string) => {
     try {
@@ -69,21 +71,36 @@ export function LLMSimulationResults({ data, onNewSimulation }: LLMSimulationRes
   };
 
   // Use agent_reasoning for 3D graph if available, otherwise transform personas
-  const agentReasoning = data?.agent_reasoning || personas.slice(0, 100).map((p: any) => ({
-    id: p.id,
-    name: p.name,
-    position: p.current_state === "advocate" ? "support" :
-                p.current_state === "churn" || p.current_state === "complain" ? "oppose" : "neutral",
-    confidence: Math.max(0, Math.min(1, (p.satisfaction_score + 10) / 20)),
-    reasoning: `Archetype: ${p.behavioral?.archetype || "unknown"}. Satisfaction: ${p.satisfaction_score?.toFixed(1) || 0}`,
-    debateRounds: p.actions_taken?.map((a: any, idx: number) => ({
-      round: idx + 1,
-      argument: `${a.action} on day ${a.day}`,
-      sentiment: a.satisfaction > 0 ? "positive" : "negative"
-    })) || [],
-    influencedBy: data?.social_graph?.[p.id]?.map((c: any) => c.target_id || c).slice(0, 3) || [],
-    influenced: [],
-  }));
+  // If no data available, generate mock data for visualization demo
+  const agentReasoning = useMemo(() => {
+    // If we have agent_reasoning from the backend
+    if (data?.agent_reasoning && data.agent_reasoning.length > 0) {
+      return data.agent_reasoning;
+    }
+
+    // If we have personas, transform them
+    if (personas && personas.length > 0) {
+      return personas.slice(0, 100).map((p: any) => ({
+        id: p.id || `agent-${Math.random().toString(36).substr(2, 9)}`,
+        name: p.name || 'Unknown Agent',
+        position: p.current_state === "advocate" ? "support" :
+                    p.current_state === "churn" || p.current_state === "complain" ? "oppose" : "neutral",
+        confidence: Math.max(0, Math.min(1, (p.satisfaction_score + 10) / 20)),
+        reasoning: `Archetype: ${p.behavioral?.archetype || "unknown"}. Satisfaction: ${p.satisfaction_score?.toFixed(1) || 0}`,
+        influencedBy: data?.social_graph?.[p.id]?.map((c: any) => c.target_id || c).slice(0, 3) || [],
+      }));
+    }
+
+    // Generate mock data for demo purposes
+    return Array.from({ length: 50 }, (_, i) => ({
+      id: `demo-agent-${i}`,
+      name: `Demo Agent ${i + 1}`,
+      position: Math.random() > 0.6 ? 'support' : Math.random() > 0.3 ? 'oppose' : 'neutral',
+      confidence: 0.3 + Math.random() * 0.7,
+      reasoning: `Demo persona for visualization. Type: ${['Enthusiast', 'Pragmatist', 'Skeptic', 'Laggard'][Math.floor(Math.random() * 4)]}`,
+      influencedBy: i > 0 ? [`demo-agent-${Math.floor(Math.random() * i)}`] : [],
+    }));
+  }, [data?.agent_reasoning, personas, data?.social_graph]);
 
   const getRecommendationColor = (rec: string) => {
     if (rec === "GO") return "text-green-600 bg-green-50 border-green-200";
@@ -164,7 +181,7 @@ export function LLMSimulationResults({ data, onNewSimulation }: LLMSimulationRes
           New Simulation
         </button>
         <button
-          onClick={() => {/* TODO: Export */}}
+          onClick={() => setShowExportModal(true)}
           className="px-6 py-3 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 flex items-center gap-2"
         >
           <Download className="w-4 h-4" />
@@ -631,6 +648,33 @@ export function LLMSimulationResults({ data, onNewSimulation }: LLMSimulationRes
           onClose={() => setSelectedAgent(null)}
         />
       )}
+
+      {/* Export Modal */}
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        data={{
+          simulation: {
+            id: data?.id || 'unknown',
+            name: report.go_no_go_recommendation || 'Simulation Report',
+            created_at: data?.created_at || new Date().toISOString(),
+            target_industry: data?.config?.target_industry || 'saas',
+            status: 'completed',
+            result: report.final_metrics || {
+              conversion_rate: report.conversion_rate || 0,
+              churn_rate: report.churn_rate || 0,
+              nps: report.nps || 0,
+              clv: report.clv || 0,
+            },
+          },
+          personas: personas.slice(0, 20).map((p: any) => ({
+            name: p.name || 'Unknown',
+            role: p.role || p.behavioral?.archetype || 'User',
+            pain_level: p.context?.current_pain_level || 5,
+            tech_savviness: p.demographics?.tech_savviness || 5,
+          })),
+        }}
+      />
     </div>
   );
 }

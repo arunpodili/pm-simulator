@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   Trophy,
@@ -26,8 +26,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { SimulationConfig, Persona } from '@/lib/api/types';
-import { AgentNetwork3D } from '@/components/3d-visualization';
-import { useAgentData } from '@/components/3d-visualization/hooks/useAgentData';
+import { Agent3DGraph } from '@/components/simulation/Agent3DGraph';
 
 interface SimulationResultsProps {
   results: any;
@@ -59,11 +58,18 @@ export function SimulationResults({
   };
   const metrics = { ...defaultMetrics, ...(results?.metrics || {}) };
 
-  // Load 3D agent data
-  const { agents, loading: agentsLoading } = useAgentData(
-    results?.id || 'mock-sim',
-    metrics.total_signups || 10000
-  );
+  // Generate agent reasoning data for 3D graph
+  const agentReasoning = useMemo(() => {
+    const count = Math.min(metrics.total_signups || 100, 100);
+    return Array.from({ length: count }, (_, i) => ({
+      id: `agent-${i}`,
+      name: `Agent ${i + 1}`,
+      position: Math.random() > 0.7 ? 'support' : Math.random() > 0.4 ? 'oppose' : 'neutral',
+      confidence: 0.3 + Math.random() * 0.7,
+      reasoning: `Persona type: ${['Enthusiast', 'Pragmatist', 'Skeptic', 'Laggard'][Math.floor(Math.random() * 4)]}`,
+      influencedBy: i > 0 ? [`agent-${Math.floor(Math.random() * i)}`] : [],
+    }));
+  }, [metrics.total_signups]);
 
   const insights: Array<{ title: string; description: string; type: 'positive' | 'warning' | 'negative' }> = results?.insights || [
     {
@@ -200,20 +206,11 @@ export function SimulationResults({
           </div>
 
           <div className="relative h-[400px] rounded-xl overflow-hidden bg-surface-muted">
-            {agentsLoading ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="glass rounded-xl p-6 text-center">
-                  <div className="text-xl font-bold mb-2">Loading Agent Network...</div>
-                  <div className="text-gray-400">Generating {metrics.total_signups?.toLocaleString() || '10,000'} agents</div>
-                </div>
-              </div>
-            ) : (
-              <AgentNetwork3D
-                agents={agents}
-                agentCount={metrics.total_signups || 10000}
-                height={400}
-              />
-            )}
+            <Agent3DGraph
+              agentReasoning={agentReasoning}
+              width={800}
+              height={400}
+            />
           </div>
         </motion.div>
 
